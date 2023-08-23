@@ -14,7 +14,7 @@ public class DatabaseConnectionManager {
     public static Connection getConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
             try {
-                ConfigurationLoader configLoader = new ConfigurationLoader("src/main/resources/application.yml");
+                ConfigurationLoader configLoader = new ConfigurationLoader("Server_ClevertecBank/src/main/resources/application.yml");
                 Map<String, Object> config = configLoader.loadConfig();
                 String url = (String) config.get("dbUrl");
                 String username = (String) config.get("dbUsername");

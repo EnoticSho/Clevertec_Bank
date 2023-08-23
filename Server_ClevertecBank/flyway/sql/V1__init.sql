@@ -21,7 +21,7 @@ CREATE TYPE transaction_type AS ENUM ('Deposit', 'Withdrawal', 'Transfer', 'Paym
 CREATE TABLE account (
                          account_id serial PRIMARY KEY,
                          account_number VARCHAR(20) UNIQUE NOT NULL,
-                         balance DECIMAL(10, 2) NOT NULL
+                         balance DECIMAL(10, 2) NOT NULL,
                          currency currency_type NOT NULL DEFAULT 'USD',
                          client_id INT REFERENCES client(client_id) ON DELETE CASCADE
 );
