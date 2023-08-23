@@ -11,5 +11,5 @@ public class Client {
     private String email;
     private String username;
     private String password;
-    private int bankId;
+    private Bank bank;
 }
