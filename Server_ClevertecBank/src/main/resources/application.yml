@@ -1,0 +1,4 @@
+dbUsername: root
+dbPassword: root
+dbUrl: jdbc:postgresql://localhost:5432/database
+interestRate: 1.0
