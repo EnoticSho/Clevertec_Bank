@@ -11,14 +11,13 @@ import java.util.concurrent.Executors;
 public class BankServer {
     private final int PORT = 8761;
     private final List<ClientHandler> clients;
-    private ExecutorService executorService;
 
     public BankServer() {
         clients = new ArrayList<>();
-        executorService = Executors.newCachedThreadPool();
     }
 
     public void run() {
+        ExecutorService executorService = Executors.newCachedThreadPool();
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is running...");
 
