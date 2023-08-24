@@ -1,43 +1,36 @@
 package server;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.Socket;
 
-class ClientHandler extends Thread {
+public class ClientHandler implements Runnable {
     private Socket clientSocket;
-    private PrintWriter out;
-    private BufferedReader in;
 
-    public ClientHandler(Socket socket) {
-        this.clientSocket = socket;
+    public ClientHandler(Socket clientSocket) {
+        this.clientSocket = clientSocket;
     }
 
     @Override
     public void run() {
-        try {
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true))
+        {
+            String inputLine;
 
-            String message;
-            while ((message = in.readLine()) != null) {
-                System.out.println("Received: " + message);
-                BankServer.broadcast(message); // Broadcast the message to all clients
+            while ((inputLine = reader.readLine()) != null) {
+                System.out.println("Получено сообщение от клиента: " + inputLine);
+
+                // запросы от клиента
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
                 clientSocket.close();
-                BankServer.clients.remove(this);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-    }
-
-    // Send a message to this client
-    public void sendMessage(String message) {
-        out.println(message);
     }
 }

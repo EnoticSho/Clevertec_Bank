@@ -5,13 +5,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class BankServer {
     private final int PORT = 8761;
     private final List<ClientHandler> clients;
+    private ExecutorService executorService;
 
     public BankServer() {
         clients = new ArrayList<>();
+        executorService = Executors.newCachedThreadPool();
     }
 
     public void run() {
@@ -21,10 +25,7 @@ public class BankServer {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress());
-
-                ClientHandler clientHandler = new ClientHandler(clientSocket);
-                clients.add(clientHandler);
-                clientHandler.start();
+                executorService.execute(new ClientHandler(clientSocket));
             }
         } catch (IOException e) {
             e.printStackTrace();
