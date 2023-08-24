@@ -1,8 +1,5 @@
 package model;
 
-import lombok.Getter;
-
-@Getter
 public class AuthMessage implements Message {
 
     private final String login;
@@ -16,5 +13,13 @@ public class AuthMessage implements Message {
     @Override
     public MessageType getType() {
         return MessageType.AUTH;
+    }
+
+    public String getLogin() {
+        return login;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }

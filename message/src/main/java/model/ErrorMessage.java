@@ -1,8 +1,5 @@
 package model;
 
-import lombok.Getter;
-
-@Getter
 public class ErrorMessage implements Message {
 
     private final String errorMessage;
@@ -14,5 +11,9 @@ public class ErrorMessage implements Message {
     @Override
     public MessageType getType() {
         return MessageType.ERROR_MESSAGE;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 }

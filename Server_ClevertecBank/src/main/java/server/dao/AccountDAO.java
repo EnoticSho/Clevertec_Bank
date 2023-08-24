@@ -10,7 +10,7 @@ import java.sql.SQLException;
 
 public class AccountDAO {
 
-    public void depositFunds(int accountId, BigDecimal amount) {
+    public void deposit(int accountId, BigDecimal amount) {
         try (Connection connection = DatabaseConnectionManager.getConnection()) {
             // Проверка на существование счета
             if (isAccountExists(connection, accountId)) {
@@ -33,12 +33,12 @@ public class AccountDAO {
         }
     }
 
-    public void withdrawFunds(int accountId, BigDecimal amount) {
+    public void withdraw(int accountId, BigDecimal amount) {
         try (Connection connection = DatabaseConnectionManager.getConnection()) {
             // Проверка на существование счета
             if (isAccountExists(connection, accountId)) {
-                BigDecimal currentBalance = getCurrentBalance(connection, accountId);
-                if (currentBalance.compareTo(amount) >= 0) {
+//                BigDecimal currentBalance = getCurrentBalance(accountId);
+                if (0 == 0) {
                     String withdrawSQL = "UPDATE account SET balance = balance - ? WHERE account_id = ?";
                     try (PreparedStatement preparedStatement = connection.prepareStatement(withdrawSQL)) {
                         preparedStatement.setBigDecimal(1, amount);
@@ -61,7 +61,7 @@ public class AccountDAO {
         }
     }
 
-    private static boolean isAccountExists(Connection connection, int accountId) throws SQLException {
+    private boolean isAccountExists(Connection connection, int accountId) throws SQLException {
         String checkAccountSQL = "SELECT account_id FROM account WHERE account_id = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(checkAccountSQL)) {
             preparedStatement.setInt(1, accountId);
@@ -71,10 +71,14 @@ public class AccountDAO {
         }
     }
 
-    private static BigDecimal getCurrentBalance(Connection connection, int accountId) throws SQLException {
-        String getBalanceSQL = "SELECT balance FROM account WHERE account_id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(getBalanceSQL)) {
-            preparedStatement.setInt(1, accountId);
+    public BigDecimal getCurrentBalance(String username) {
+        String getBalanceSQL = "SELECT a.balance\n" +
+                "FROM account a\n" +
+                "JOIN client c ON a.client_id = c.client_id\n" +
+                "WHERE c.username = ?";
+        try (Connection connection = DatabaseConnectionManager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(getBalanceSQL)) {
+            preparedStatement.setString(1, username);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     return resultSet.getBigDecimal("balance");
@@ -82,6 +86,9 @@ public class AccountDAO {
                     throw new SQLException("Счет не найден.");
                 }
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        return null;
     }
 }

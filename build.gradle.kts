@@ -2,6 +2,11 @@ plugins {
     id("java")
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 group = "org.example.clevertecbank"
 version = "1.0-SNAPSHOT"
 

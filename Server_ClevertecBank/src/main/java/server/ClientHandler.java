@@ -1,19 +1,27 @@
 package server;
 
 import model.*;
+import server.service.AccountService;
+import server.service.AuthService;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
 import java.net.Socket;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
+    private final AuthService authService;
+    private final AccountService accountService;
+    private String username;
 
     public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
+        authService = new AuthService();
+        accountService = new AccountService();
         try {
             this.out = new ObjectOutputStream(clientSocket.getOutputStream());
             this.in = new ObjectInputStream(clientSocket.getInputStream());
@@ -24,49 +32,69 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        new Thread(() -> {
-            try {
-                authenticate();
-//                readMessages();
-            } finally {
-                try {
-                    clientSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-
+        try {
+            authenticate();
+            readMessages();
+        } finally {
+            closeResources();
+        }
     }
 
     private void authenticate() {
         sendMessage(new ServerAuthMessage());
         while (true) {
-//            try {
-//                final Message message = (Message) in.readObject();
-//                if (message instanceof AuthMessage am) {
-//                    final AuthMessage authMessage = (AuthMessage) message;
-//                    final String login = authMessage.getLogin();
-//                    final String password = authMessage.getPassword();
-//                    final String nick = authService.getNickByLoginAndPassword(login, password);
-//                    if (nick != null) {
+            try {
+                final Message message = (Message) in.readObject();
+                if (message instanceof AuthMessage am) {
+                    String login = am.getLogin();
+                    String password = am.getPassword();
+                    if (authService.isClientExists(login, password)) {
 //                        if (server.isNickBusy(nick)) {
 //                            sendMessage(ErrorMessage.of("Пользователь уже авторизован"));
 //                            continue;
 //                        }
-//                        authTimeThread.interrupt();
-//                        sendMessage(AuthOkMessage.of(nick));
-//                        this.nick = nick;
-//                        server.broadcast(SimpleMessage.of("Пользователь " + nick + " зашел в чат"));
-//                        server.subscribe(this);
-//                        break;
-//                    } else {
-//                        sendMessage(ErrorMessage.of("Неверные логин и пароль"));
+                        username = login;
+                        sendMessage(new AuthOk());
+                        break;
+                    } else {
+                        sendMessage(new ErrorMessage("Неверные логин и пароль"));
+                    }
+                }
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void readMessages() {
+        sendMessage(new ServerOperationMessage());
+        try {
+            while (true) {
+                Message message = (Message) in.readObject();
+                if (message instanceof BalanceMessage bm) {
+                    BigDecimal currentBalance = accountService.getCurrentBalance(username);
+                    sendMessage(new BalanceMessage(currentBalance));
+                }
+//                if (message.getCommand() == Command.MESSAGE) {
+//                    final SimpleMessage simpleMessage = (SimpleMessage) message;
+//                    server.broadcast(simpleMessage);
+//                }
+//                if (message.getCommand() == Command.PRIVATE_MESSAGE) {
+//                    final PrivateMessage privateMessage = (PrivateMessage) message;
+//                    server.sendMessageToClient(this, privateMessage.getNickTo(), privateMessage.getMessage());
+//                }
+//                if (message.getCommand() == Command.CHANGENICK) {
+//                    try (ChangeNickService changeNickService = new ChangeNickService()) {
+//                        ChangeNickMessage changeNickMessage = (ChangeNickMessage) message;
+//                        changeNickService.changeNick(changeNickMessage.getNewNick(), changeNickMessage.getOldNick());
+//                        this.nick = changeNickMessage.getNewNick();
+//                        server.update(changeNickMessage.getOldNick(), this);
+//                        server.broadcast(changeNickMessage);
 //                    }
 //                }
-//            } catch (IOException | ClassNotFoundException e) {
-//                throw new RuntimeException(e);
-//            }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
@@ -74,6 +102,16 @@ public class ClientHandler implements Runnable {
         try {
             System.out.println("SERVER: " + message.getType());
             out.writeObject(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeResources() {
+        try {
+            out.close();
+            in.close();
+            clientSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

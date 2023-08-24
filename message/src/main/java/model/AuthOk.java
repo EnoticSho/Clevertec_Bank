@@ -1,8 +1,5 @@
 package model;
 
-import lombok.Getter;
-
-@Getter
 public class AuthOk implements Message {
 
     private final String authOk = "Успешная авторизация";
@@ -10,5 +7,9 @@ public class AuthOk implements Message {
     @Override
     public MessageType getType() {
         return MessageType.AUTH_OK;
+    }
+
+    public String getAuthOk() {
+        return authOk;
     }
 }

@@ -17,8 +17,9 @@ public class BankServer {
     }
 
     public void run() {
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(PORT);
+             ExecutorService executorService = Executors.newCachedThreadPool()) {
+
             System.out.println("Server is running...");
 
             while (true) {
