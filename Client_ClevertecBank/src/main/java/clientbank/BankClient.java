@@ -77,6 +77,8 @@ public class BankClient {
                     printText(drm.getMessage(), scanner);
                 } else if (message instanceof WithdrawalResponseMessage wrm) {
                     printText(wrm.getMessage(), scanner);
+                } else if (message instanceof TransferResponseMessage trm) {
+                    printText(trm.getMessage(), scanner);
                 }
             }
         } catch (IOException | ClassNotFoundException e) {

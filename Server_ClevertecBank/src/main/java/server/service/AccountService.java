@@ -1,15 +1,15 @@
 package server.service;
 
 import server.dao.AccountDAO;
-
+import server.dbConnection.DatabaseConnectionManager;
 import java.math.BigDecimal;
 
 public class AccountService {
 
     private final AccountDAO accountDAO;
 
-    public AccountService() {
-        accountDAO = new AccountDAO();
+    public AccountService(DatabaseConnectionManager connectionManager) {
+        this.accountDAO = new AccountDAO(connectionManager);
     }
 
     public BigDecimal getCurrentBalance(String username) {

@@ -6,7 +6,6 @@ import server.entity.Transaction;
 import server.entity.TransactionType;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
@@ -14,10 +13,12 @@ public class TransactionService {
 
     private final TransactionDAO transactionDAO;
     private final AccountService accountService;
+    private final DatabaseConnectionManager connectionManager;
 
-    public TransactionService() throws SQLException {
-        this.transactionDAO = new TransactionDAO();
-        this.accountService = new AccountService();
+    public TransactionService(DatabaseConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+        this.transactionDAO = new TransactionDAO(connectionManager);
+        this.accountService = new AccountService(connectionManager);
     }
 
     public boolean deposit(int accountId, BigDecimal amount) throws SQLException {
@@ -35,9 +36,7 @@ public class TransactionService {
     }
 
     public boolean transfer(int fromAccountId, String number, BigDecimal amount) throws SQLException {
-        Connection connection = null;
-        try {
-            connection = DatabaseConnectionManager.getConnection();
+        try (var connection = connectionManager.getConnection()) {
             connection.setAutoCommit(false);
 
             Integer accountIdByNumber = accountService.getAccountIdByNumber(number);
@@ -51,15 +50,14 @@ public class TransactionService {
             connection.commit();
 
         } catch (Exception ex) {
-            if (connection != null) {
-                connection.rollback();
+            try {
+                if (connectionManager != null) {
+                    connectionManager.getConnection().rollback();
+                }
+            } catch (SQLException se) {
+                se.printStackTrace();
             }
             throw ex;
-        } finally {
-            if (connection != null) {
-                connection.setAutoCommit(true);
-                connection.close();
-            }
         }
         return true;
     }

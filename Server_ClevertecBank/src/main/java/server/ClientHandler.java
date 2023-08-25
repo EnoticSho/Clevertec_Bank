@@ -7,6 +7,7 @@ import model.auth.AuthRequestMessage;
 import model.auth.AuthResponse;
 import model.auth.ServerAuthMessage;
 import model.operations.*;
+import server.dbConnection.DatabaseConnectionManager;
 import server.service.AccountService;
 import server.service.TransactionService;
 
@@ -24,6 +25,7 @@ public class ClientHandler implements Runnable {
     private final TransactionService transactionService;
     private final AccountService accountService;
     private final BankServer bankServer;
+    DatabaseConnectionManager connectionManager;
     @Getter
     private String username;
     @Getter
@@ -31,13 +33,10 @@ public class ClientHandler implements Runnable {
 
     public ClientHandler(Socket clientSocket, BankServer bankServer) {
         this.clientSocket = clientSocket;
-        this.accountService = new AccountService();
         this.bankServer = bankServer;
-        try {
-            transactionService = new TransactionService();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        connectionManager = new DatabaseConnectionManager();
+        transactionService = new TransactionService(connectionManager);
+        accountService = new AccountService(connectionManager);
         try {
             this.out = new ObjectOutputStream(clientSocket.getOutputStream());
             this.in = new ObjectInputStream(clientSocket.getInputStream());
@@ -102,7 +101,7 @@ public class ClientHandler implements Runnable {
                     }
                 }else if (message instanceof TransferRequestMessage trm) {
                     if (transactionService.transfer(accountId, trm.getAccount(), trm.getBigDecimal())) {
-
+                        sendMessage(new TransferResponseMessage(trm.getAccount(), trm.getBigDecimal()));
                     }
                 }
             }
