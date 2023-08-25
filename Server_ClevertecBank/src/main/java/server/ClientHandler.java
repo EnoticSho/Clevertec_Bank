@@ -6,10 +6,11 @@ import model.Message;
 import model.auth.AuthRequestMessage;
 import model.auth.AuthResponse;
 import model.auth.ServerAuthMessage;
+import model.operations.BalanceRequestMessage;
 import model.operations.BalanceResponseMessage;
 import model.operations.ServerOperationMessage;
 import server.service.AccountService;
-import server.service.AuthService;
+import server.service.ClientService;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -21,7 +22,7 @@ public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
-    private final AuthService authService;
+    private final ClientService clientService;
     private final AccountService accountService;
     private final BankServer bankServer;
     @Getter
@@ -30,7 +31,7 @@ public class ClientHandler implements Runnable {
     public ClientHandler(Socket clientSocket, BankServer bankServer) {
         this.clientSocket = clientSocket;
         this.bankServer = bankServer;
-        authService = new AuthService();
+        clientService = new ClientService();
         accountService = new AccountService();
         try {
             this.out = new ObjectOutputStream(clientSocket.getOutputStream());
@@ -58,8 +59,10 @@ public class ClientHandler implements Runnable {
                 final Message message = (Message) in.readObject();
                 if (message instanceof AuthRequestMessage am) {
                     String login = am.getLogin();
+                    System.out.println(login);
                     String password = am.getPassword();
-                    if (authService.isClientExists(login, password)) {
+                    System.out.println(password);
+                    if (clientService.isClientExists(login, password)) {
                         if (bankServer.isUserIn(login)) {
                             sendMessage(new ErrorMessage("Пользователь уже авторизован"));
                             continue;
@@ -83,11 +86,11 @@ public class ClientHandler implements Runnable {
         try {
             while (true) {
                 Message message = (Message) in.readObject();
-                if (message instanceof BalanceResponseMessage bm) {
+                if (message instanceof BalanceRequestMessage bm) {
                     BigDecimal currentBalance = accountService.getCurrentBalance(username);
                     sendMessage(new BalanceResponseMessage(currentBalance));
                 }
-//                if (message.getCommand() == Command.MESSAGE) {
+//                if (message instanceof BalanceResponseMessage bm) {
 //                    final SimpleMessage simpleMessage = (SimpleMessage) message;
 //                    server.broadcast(simpleMessage);
 //                }

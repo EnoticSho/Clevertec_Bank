@@ -6,12 +6,14 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class Transaction {
-    private int transactionId;
+    private Integer transactionId;
     private BigDecimal amount;
     private Timestamp transactionDate;
-    private int senderAccountId;
-    private int receiverAccountId;
-    private String transactionType;
+    private Integer senderAccountId;
+    private Integer receiverAccountId;
+    private TransactionType transactionType;
 }

@@ -75,7 +75,8 @@ public class AccountDAO {
         String getBalanceSQL = "SELECT a.balance\n" +
                 "FROM account a\n" +
                 "JOIN client c ON a.client_id = c.client_id\n" +
-                "WHERE c.username = ?";
+                "WHERE c.username = ?" +
+                "LIMIT 1";
         try (Connection connection = DatabaseConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(getBalanceSQL)) {
             preparedStatement.setString(1, username);

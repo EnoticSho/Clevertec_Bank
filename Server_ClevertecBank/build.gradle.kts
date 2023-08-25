@@ -10,6 +10,7 @@ repositories {
 }
 
 dependencies {
+    annotationProcessor("org.projectlombok:lombok:1.18.26")
     implementation("org.projectlombok:lombok:1.18.26")
     implementation("org.postgresql:postgresql:42.6.0")
     implementation("org.yaml:snakeyaml:2.0")

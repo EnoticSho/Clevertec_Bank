@@ -6,5 +6,4 @@ import lombok.*;
 public class Bank {
     private int bankId;
     private String name;
-    private String location;
 }

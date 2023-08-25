@@ -7,6 +7,7 @@ import model.auth.ServerAuthMessage;
 import model.operations.*;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.net.*;
 import java.util.Scanner;
 
@@ -72,8 +73,10 @@ public class BankClient {
                 Message message = network.receiveMessage();
                 if (message instanceof ServerOperationMessage) {
                     handleServerOperationMessage((ServerOperationMessage) message);
-                } else if (message instanceof BalanceResponseMessage) {
-                    System.out.println("Your balance: " + ((BalanceResponseMessage) message).getBalance());
+                } else if (message instanceof BalanceResponseMessage brm) {
+                    System.out.println("Your balance: " + brm.getBalance());
+                } else if (message instanceof DepositResponseMessage drm) {
+                    System.out.println(drm.getMessage());
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -86,11 +89,28 @@ public class BankClient {
         System.out.println(som.getOperations());
         int num = Integer.parseInt(scanner.nextLine());
         switch (num) {
-            case 1 -> sendMessage(new BalanceRequestMessage());
-            case 2 -> sendMessage(new WithdrawalRequestMessage());
-            case 3 -> sendMessage(new DepositRequestMessage());
-            case 4 -> sendMessage(new TransferRequestMessage());
+            case 1 -> {
+                sendMessage(new BalanceRequestMessage());
+            }
+            case 2 -> {
+                System.out.print("Enter amount of withdrawal: ");
+                BigDecimal bg = BigDecimal.valueOf(Long.parseLong(scanner.nextLine()));
+                sendMessage(new WithdrawalRequestMessage(bg));
+            }
+            case 3 -> {
+                System.out.print("Enter amount of deposit: ");
+                BigDecimal bg = BigDecimal.valueOf(Long.parseLong(scanner.nextLine()));
+                sendMessage(new DepositRequestMessage(bg));
+            }
+            case 4 -> {
+                System.out.print("Enter amount of deposit: ");
+                BigDecimal bg = BigDecimal.valueOf(Long.parseLong(scanner.nextLine()));
+                System.out.print("Enter number of account: ");
+                String accountNumber = scanner.nextLine();
+                sendMessage(new TransferRequestMessage(accountNumber, bg));
+            }
             default -> {
+                close();
             }
         }
     }

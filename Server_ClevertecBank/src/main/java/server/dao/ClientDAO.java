@@ -1,13 +1,17 @@
-package server.service;
+package server.dao;
 
 import server.dbConnection.DatabaseConnectionManager;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-public class AuthService {
+public class ClientDAO {
+
     public boolean isClientExists(String login, String password) {
         try (Connection connection = DatabaseConnectionManager.getConnection()) {
-            String checkAccountSQL = "SELECT password FROM client WHERE username = ? and Password = ?";
+            String checkAccountSQL = "SELECT username FROM client WHERE username = ? and Password = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(checkAccountSQL)) {
                 preparedStatement.setString(1, login);
                 preparedStatement.setString(2, password);

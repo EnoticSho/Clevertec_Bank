@@ -7,8 +7,7 @@ import model.MessageType;
 import java.math.BigDecimal;
 
 @Getter
-public class BalanceResponseMessage implements Message {
-
+public class BalanceResponseMessage implements Message{
     private final BigDecimal balance;
 
     public BalanceResponseMessage(BigDecimal balance) {

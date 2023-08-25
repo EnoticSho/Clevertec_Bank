@@ -1,20 +1,20 @@
 package model.operations;
 
+import lombok.Getter;
 import model.Message;
 import model.MessageType;
 
 import java.math.BigDecimal;
 
+@Getter
 public class TransferRequestMessage implements Message {
-    private String account;
-    private BigDecimal bigDecimal;
+    private final String account;
+    private final BigDecimal bigDecimal;
 
     public TransferRequestMessage(String account, BigDecimal bigDecimal) {
         this.account = account;
         this.bigDecimal = bigDecimal;
     }
-
-    public TransferRequestMessage() {}
 
     @Override
     public MessageType getType() {
