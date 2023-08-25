@@ -105,7 +105,8 @@ public class AccountDAO {
                 SELECT a.balance
                 FROM account a
                 JOIN client c ON a.client_id = c.client_id
-                WHERE c.username = ?LIMIT 1""";
+                WHERE c.username = ? And a.bank_id = 1
+                LIMIT 1""";
         try (Connection connection = DatabaseConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(getBalanceSQL)) {
             preparedStatement.setString(1, username);

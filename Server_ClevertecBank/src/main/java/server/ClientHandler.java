@@ -58,13 +58,13 @@ public class ClientHandler implements Runnable {
     }
 
     private void authenticate() {
-        sendMessage(new ServerAuthMessage());
         while (true) {
             try {
                 final Message message = (Message) in.readObject();
                 if (message instanceof AuthRequestMessage am) {
                     String login = am.getLogin();
                     String password = am.getPassword();
+                    System.out.println(password);
                     accountId = accountService.getAccountIdByClientLogin(login, password);
                     if (accountId != null) {
                         if (bankServer.isUserIn(login)) {
@@ -76,7 +76,7 @@ public class ClientHandler implements Runnable {
                         sendMessage(new AuthResponse());
                         break;
                     } else {
-                        sendMessage(new ErrorMessage("Неверные логин или пароль"));
+                        sendMessage(new ErrorMessage("Неверный логин или пароль"));
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
@@ -86,7 +86,6 @@ public class ClientHandler implements Runnable {
     }
 
     private void readMessages() {
-        sendMessage(new ServerOperationMessage());
         try {
             while (true) {
                 Message message = (Message) in.readObject();
@@ -106,20 +105,6 @@ public class ClientHandler implements Runnable {
 
                     }
                 }
-
-//                if (message.getCommand() == Command.PRIVATE_MESSAGE) {
-//                    final PrivateMessage privateMessage = (PrivateMessage) message;
-//                    server.sendMessageToClient(this, privateMessage.getNickTo(), privateMessage.getMessage());
-//                }
-//                if (message.getCommand() == Command.CHANGENICK) {
-//                    try (ChangeNickService changeNickService = new ChangeNickService()) {
-//                        ChangeNickMessage changeNickMessage = (ChangeNickMessage) message;
-//                        changeNickService.changeNick(changeNickMessage.getNewNick(), changeNickMessage.getOldNick());
-//                        this.nick = changeNickMessage.getNewNick();
-//                        server.update(changeNickMessage.getOldNick(), this);
-//                        server.broadcast(changeNickMessage);
-//                    }
-//                }
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();

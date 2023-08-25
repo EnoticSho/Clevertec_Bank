@@ -42,10 +42,9 @@ public class BankClient {
     private void authenticate() {
         try {
             while (true) {
+                handleServerAuthMessage();
                 Message message = network.receiveMessage();
-                if (message instanceof ServerAuthMessage sam) {
-                    handleServerAuthMessage(sam);
-                } else if (message instanceof AuthResponse ao) {
+                if (message instanceof AuthResponse ao) {
                     System.out.println(ao.getAuthOk());
                     break;
                 } else if (message instanceof ErrorMessage em) {
@@ -58,8 +57,8 @@ public class BankClient {
         }
     }
 
-    private void handleServerAuthMessage(ServerAuthMessage sam) throws IOException {
-        System.out.println(sam.getString());
+    private void handleServerAuthMessage() throws IOException {
+        System.out.println(new ServerAuthMessage().getString());
         System.out.print("Enter login: ");
         String login = scanner.nextLine();
         System.out.print("Enter password: ");
@@ -70,15 +69,14 @@ public class BankClient {
     private void readMessages() {
         try {
             while (true) {
+                handleServerOperationMessage();
                 Message message = network.receiveMessage();
-                if (message instanceof ServerOperationMessage) {
-                    handleServerOperationMessage((ServerOperationMessage) message);
-                } else if (message instanceof BalanceResponseMessage brm) {
-                    System.out.println("Your balance: " + brm.getBalance());
+                if (message instanceof BalanceResponseMessage brm) {
+                    printText(brm.getMessage(), scanner);
                 } else if (message instanceof DepositResponseMessage drm) {
-                    System.out.println(drm.getMessage());
+                    printText(drm.getMessage(), scanner);
                 } else if (message instanceof WithdrawalResponseMessage wrm) {
-                    System.out.println(wrm.getMessage());
+                    printText(wrm.getMessage(), scanner);
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -87,8 +85,8 @@ public class BankClient {
         }
     }
 
-    private void handleServerOperationMessage(ServerOperationMessage som) throws IOException {
-        System.out.println(som.getOperations());
+    private void handleServerOperationMessage() throws IOException {
+        System.out.println(new ServerOperationMessage().getOperations());
         int num = Integer.parseInt(scanner.nextLine());
         switch (num) {
             case 1 -> {
@@ -111,7 +109,7 @@ public class BankClient {
                 String accountNumber = scanner.nextLine();
                 sendMessage(new TransferRequestMessage(accountNumber, bg));
             }
-            default -> {
+            case 5 -> {
                 close();
             }
         }
@@ -126,13 +124,23 @@ public class BankClient {
         }
     }
 
+    private void printText(String s, Scanner scanner) {
+        System.out.println(s);
+        System.out.println("""
+                            1. Продолжить
+                            2. Выйти
+                            """);
+        int a = Integer.parseInt(scanner.nextLine());
+        if (a == 2) close();
+    }
+
     private void close() {
         try {
-            if (network != null) {
-                network.close();
-            }
             if (socket != null) {
                 socket.close();
+            }
+            if (network != null) {
+                network.close();
             }
         } catch (IOException e) {
             System.err.println("Error while closing resources.");

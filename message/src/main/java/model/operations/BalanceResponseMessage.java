@@ -8,10 +8,10 @@ import java.math.BigDecimal;
 
 @Getter
 public class BalanceResponseMessage implements Message{
-    private final BigDecimal balance;
+    private final String message;
 
     public BalanceResponseMessage(BigDecimal balance) {
-        this.balance = balance;
+        message = "Ваш остаток: " + balance;
     }
 
     @Override

@@ -7,8 +7,8 @@ VALUES
     ('Clevertec-Bank3');
 
 INSERT INTO client (first_name, last_name, email, username, password)
-VALUES ('John', 'Doe', 'johndoe@email.com', 'johndoe', 'password123'),
-       ('Jane', 'Smith', 'janesmith@email.com', 'janesmith', 'mypassword'),
+VALUES ('Alisa', 'Doe', 'johndoe@email.com', 'Alisa', 'Alisa'),
+       ('Jane', 'Smith', 'janesmith@email.com', 'Sanya', 'Sanya'),
        ('Alice', 'Johnson', 'alicej@email.com', 'alicej', 'alicepassword'),
        ('Bob', 'Williams', 'bobw@email.com', 'bobwill', 'bobbypassword'),
        ('Charlie', 'Brown', 'charlieb@email.com', 'charliebrown', 'charliespassword');

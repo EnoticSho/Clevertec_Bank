@@ -9,6 +9,7 @@ public class ServerOperationMessage implements Message {
             2. Снять
             3. Пополнить
             4. Перевести
+            5. Выйти
             """;
 
     @Override
