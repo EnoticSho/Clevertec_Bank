@@ -1,28 +1,26 @@
-INSERT INTO bank (name, location)
+INSERT INTO bank (name)
 VALUES
-    ('Clevertec-Bank', '123 Main St, New York, NY'),
-    ('Clevertec-Bank1', '456 Oak Ave, San Francisco, CA'),
-    ('Clevertec-Bank2', '789 Elm Rd, Los Angeles, CA'),
-    ('Clevertec-Bank2', '101 Pine St, Chicago, IL'),
-    ('Clevertec-Bank3', '321 Maple Ave, Boston, MA');
+    ('Clevertec-Bank'),
+    ('Clevertec-Bank1'),
+    ('Clevertec-Bank2'),
+    ('Clevertec-Bank2'),
+    ('Clevertec-Bank3');
 
-INSERT INTO client (first_name, last_name, email, username, password, bank_id)
-VALUES
-    ('John', 'Doe', 'john.doe@example.com', 'johndoe', 'password123', 1),
-    ('Jane', 'Smith', 'jane.smith@example.com', 'janesmith', 'pass456', 2),
-    ('Michael', 'Johnson', 'michael.j@example.com', 'michaelj', 'secure789', 1),
-    ('Emily', 'Davis', 'emily.d@example.com', 'emilyd', 'safe101', 3),
-    ('William', 'Brown', 'william.b@example.com', 'williamb', '1234pass', 2);
+INSERT INTO client (first_name, last_name, email, username, password)
+VALUES ('Alisa', 'Doe', 'johndoe@email.com', 'Alisa', 'Alisa'),
+       ('Jane', 'Smith', 'janesmith@email.com', 'Sanya', 'Sanya'),
+       ('Alice', 'Johnson', 'alicej@email.com', 'alicej', 'alicepassword'),
+       ('Bob', 'Williams', 'bobw@email.com', 'bobwill', 'bobbypassword'),
+       ('Charlie', 'Brown', 'charlieb@email.com', 'charliebrown', 'charliespassword');
 
-INSERT INTO account (account_number, balance, currency, client_id)
-VALUES
-    ('1234567890', 5000.00, 'USD', 1),
-    ('9876543210', 2500.00, 'USD', 2),
-    ('4567890123', 7500.00, 'EUR', 3),
-    ('7890123456', 3000.00, 'USD', 4),
-    ('5678901234', 6000.00, 'EUR', 5),
-    ('3456789012', 4500.00, 'USD', 1),
-    ('2345678901', 4200.00, 'EUR', 2),
-    ('8765432109', 5200.00, 'USD', 3),
-    ('6543210987', 6800.00, 'USD', 4),
-    ('4321098765', 3200.00, 'EUR', 5);
+INSERT INTO account (account_number, balance, currency, client_id, bank_id)
+VALUES ('1234567890', 15000.00, 'USD', 1, 1),
+       ('0987654321', 5000.00, 'EUR', 2, 1),
+       ('1122334455', 7000.00, 'GBP', 3, 2),
+       ('5566778825', 9500.00, 'JPY', 4, 2),
+       ('2233445566', 20000.00, 'CAD', 5, 3),
+       ('3344556677', 32000.00, 'AUD', 1, 3),
+       ('4455667788', 14000.00, 'USD', 2, 4),
+       ('5566778899', 3600.00, 'EUR', 3, 4),
+       ('6677889900', 8000.00, 'GBP', 4, 5),
+       ('7788990011', 4500.00, 'JPY', 5, 5);

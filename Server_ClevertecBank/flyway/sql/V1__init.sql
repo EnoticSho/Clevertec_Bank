@@ -1,7 +1,6 @@
 CREATE TABLE bank (
                       bank_id serial PRIMARY KEY,
-                      name VARCHAR(255) NOT NULL,
-                      location VARCHAR(255) NOT NULL
+                      name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE client (
@@ -10,8 +9,7 @@ CREATE TABLE client (
                         last_name VARCHAR(50) NOT NULL,
                         email VARCHAR(100) UNIQUE NOT NULL,
                         username VARCHAR(50) UNIQUE NOT NULL,
-                        password VARCHAR(255) NOT NULL,
-                        bank_id INT REFERENCES bank(bank_id) ON DELETE CASCADE
+                        password VARCHAR(255) NOT NULL
 );
 
 CREATE TYPE currency_type AS ENUM ('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'Other');
@@ -23,11 +21,12 @@ CREATE TABLE account (
                          account_number VARCHAR(20) UNIQUE NOT NULL,
                          balance DECIMAL(10, 2) NOT NULL,
                          currency currency_type NOT NULL DEFAULT 'USD',
-                         client_id INT REFERENCES client(client_id) ON DELETE CASCADE
+                         client_id INT REFERENCES client(client_id) ON DELETE CASCADE,
+                         bank_id INT REFERENCES bank(bank_id) ON DELETE CASCADE
 );
 
 CREATE TABLE transaction (
-                             transaction_id INT PRIMARY KEY,
+                             transaction_id serial PRIMARY KEY,
                              amount DECIMAL(10, 2) NOT NULL,
                              transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                              sender_account_id INT,

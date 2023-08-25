@@ -2,7 +2,7 @@ plugins {
     id("java")
 }
 
-group = "org.example.clevertecbankclient"
+group = "org.example.message"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -12,7 +12,6 @@ repositories {
 dependencies {
     implementation("org.projectlombok:lombok:1.18.26")
     annotationProcessor("org.projectlombok:lombok:1.18.26")
-    implementation(project(mapOf("path" to ":message")))
 }
 
 tasks.test {
