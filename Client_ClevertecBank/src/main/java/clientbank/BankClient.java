@@ -77,6 +77,8 @@ public class BankClient {
                     System.out.println("Your balance: " + brm.getBalance());
                 } else if (message instanceof DepositResponseMessage drm) {
                     System.out.println(drm.getMessage());
+                } else if (message instanceof WithdrawalResponseMessage wrm) {
+                    System.out.println(wrm.getMessage());
                 }
             }
         } catch (IOException | ClassNotFoundException e) {

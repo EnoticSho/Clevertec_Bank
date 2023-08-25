@@ -9,7 +9,9 @@ public class ClientService {
         this.clientDAO = new ClientDAO();
     }
 
-    public boolean isClientExists(String login, String password) {
-        return clientDAO.isClientExists(login, password);
-    }
+//    public boolean isClientExists(String login, String password) {
+//        return clientDAO.isClientExists(login, password);
+//    }
+
+
 }

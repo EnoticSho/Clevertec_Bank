@@ -6,33 +6,38 @@ import model.Message;
 import model.auth.AuthRequestMessage;
 import model.auth.AuthResponse;
 import model.auth.ServerAuthMessage;
-import model.operations.BalanceRequestMessage;
-import model.operations.BalanceResponseMessage;
-import model.operations.ServerOperationMessage;
+import model.operations.*;
 import server.service.AccountService;
-import server.service.ClientService;
+import server.service.TransactionService;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.net.Socket;
+import java.sql.SQLException;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
-    private final ClientService clientService;
+    private final TransactionService transactionService;
     private final AccountService accountService;
     private final BankServer bankServer;
     @Getter
     private String username;
+    @Getter
+    private Integer accountId;
 
     public ClientHandler(Socket clientSocket, BankServer bankServer) {
         this.clientSocket = clientSocket;
+        this.accountService = new AccountService();
         this.bankServer = bankServer;
-        clientService = new ClientService();
-        accountService = new AccountService();
+        try {
+            transactionService = new TransactionService();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         try {
             this.out = new ObjectOutputStream(clientSocket.getOutputStream());
             this.in = new ObjectInputStream(clientSocket.getInputStream());
@@ -59,10 +64,9 @@ public class ClientHandler implements Runnable {
                 final Message message = (Message) in.readObject();
                 if (message instanceof AuthRequestMessage am) {
                     String login = am.getLogin();
-                    System.out.println(login);
                     String password = am.getPassword();
-                    System.out.println(password);
-                    if (clientService.isClientExists(login, password)) {
+                    accountId = accountService.getAccountIdByClientLogin(login, password);
+                    if (accountId != null) {
                         if (bankServer.isUserIn(login)) {
                             sendMessage(new ErrorMessage("Пользователь уже авторизован"));
                             continue;
@@ -86,14 +90,23 @@ public class ClientHandler implements Runnable {
         try {
             while (true) {
                 Message message = (Message) in.readObject();
-                if (message instanceof BalanceRequestMessage bm) {
+                if (message instanceof BalanceRequestMessage) {
                     BigDecimal currentBalance = accountService.getCurrentBalance(username);
                     sendMessage(new BalanceResponseMessage(currentBalance));
+                }else if (message instanceof DepositRequestMessage drm) {
+                    if (transactionService.deposit(accountId, drm.getAmount())) {
+                        sendMessage(new DepositResponseMessage(drm.getAmount()));
+                    }
+                }else if (message instanceof WithdrawalRequestMessage wrm) {
+                    if (transactionService.withdraw(accountId, wrm.getAmount())) {
+                        sendMessage(new WithdrawalResponseMessage(wrm.getAmount()));
+                    }
+                }else if (message instanceof TransferRequestMessage trm) {
+                    if (transactionService.transfer(accountId, trm.getAccount(), trm.getBigDecimal())) {
+
+                    }
                 }
-//                if (message instanceof BalanceResponseMessage bm) {
-//                    final SimpleMessage simpleMessage = (SimpleMessage) message;
-//                    server.broadcast(simpleMessage);
-//                }
+
 //                if (message.getCommand() == Command.PRIVATE_MESSAGE) {
 //                    final PrivateMessage privateMessage = (PrivateMessage) message;
 //                    server.sendMessageToClient(this, privateMessage.getNickTo(), privateMessage.getMessage());
@@ -110,6 +123,8 @@ public class ClientHandler implements Runnable {
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 

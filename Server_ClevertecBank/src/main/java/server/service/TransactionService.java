@@ -1,6 +1,5 @@
 package server.service;
 
-import server.dao.AccountDAO;
 import server.dao.TransactionDAO;
 import server.dbConnection.DatabaseConnectionManager;
 import server.entity.Transaction;
@@ -14,44 +13,54 @@ import java.sql.Timestamp;
 public class TransactionService {
 
     private final TransactionDAO transactionDAO;
-    private final AccountDAO accountDAO;
-    private final Connection connection = DatabaseConnectionManager.getConnection();
+    private final AccountService accountService;
 
-    public TransactionService(TransactionDAO transactionDAO, AccountDAO accountDAO) throws SQLException {
-        this.transactionDAO = transactionDAO;
-        this.accountDAO = accountDAO;
+    public TransactionService() throws SQLException {
+        this.transactionDAO = new TransactionDAO();
+        this.accountService = new AccountService();
     }
 
-    public void deposit(int accountId, BigDecimal amount) throws SQLException {
-        accountDAO.deposit(accountId, amount); // Assuming this method exists in AccountDAO.
+    public boolean deposit(int accountId, BigDecimal amount) throws SQLException {
+        accountService.deposit(accountId, amount);
         Transaction transaction = new Transaction(null, amount, new Timestamp(System.currentTimeMillis()), null, accountId, TransactionType.Deposit);
         transactionDAO.createTransaction(transaction);
+        return true;
     }
 
-    public void withdraw(int accountId, BigDecimal amount) throws SQLException {
-        accountDAO.withdraw(accountId, amount); // Assuming this method exists in AccountDAO.
+    public boolean withdraw(int accountId, BigDecimal amount) throws SQLException {
+        accountService.withdraw(accountId, amount);
         Transaction transaction = new Transaction(null, amount, new Timestamp(System.currentTimeMillis()), accountId, null, TransactionType.Withdrawal);
         transactionDAO.createTransaction(transaction);
+        return true;
     }
 
-    public void transfer(int fromAccountId, int toAccountId, BigDecimal amount) throws SQLException {
+    public boolean transfer(int fromAccountId, String number, BigDecimal amount) throws SQLException {
+        Connection connection = null;
         try {
+            connection = DatabaseConnectionManager.getConnection();
             connection.setAutoCommit(false);
 
-            accountDAO.withdraw(fromAccountId, amount);
+            Integer accountIdByNumber = accountService.getAccountIdByNumber(number);
 
-            accountDAO.deposit(toAccountId, amount);
+            accountService.withdraw(fromAccountId, amount);
+            accountService.deposit(accountIdByNumber, amount);
 
-            Transaction transaction = new Transaction(null, amount, new Timestamp(System.currentTimeMillis()), fromAccountId, toAccountId, TransactionType.Transfer);
+            Transaction transaction = new Transaction(null, amount, new Timestamp(System.currentTimeMillis()), fromAccountId, accountIdByNumber, TransactionType.Transfer);
             transactionDAO.createTransaction(transaction);
 
             connection.commit();
 
         } catch (Exception ex) {
-            connection.rollback();
+            if (connection != null) {
+                connection.rollback();
+            }
             throw ex;
         } finally {
-            connection.setAutoCommit(true);
+            if (connection != null) {
+                connection.setAutoCommit(true);
+                connection.close();
+            }
         }
+        return true;
     }
 }
