@@ -31,4 +31,8 @@ public class AccountService {
     public Integer getAccountIdByNumber(String number) {
         return accountDAO.getAccountIdByNumber(number);
     }
+
+    public boolean addPercentByAccount(Double per) {
+        return accountDAO.addPercentByAccount(per);
+    }
 }

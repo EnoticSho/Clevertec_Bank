@@ -5,7 +5,6 @@ import model.ErrorMessage;
 import model.Message;
 import model.auth.AuthRequestMessage;
 import model.auth.AuthResponse;
-import model.auth.ServerAuthMessage;
 import model.operations.*;
 import server.dbConnection.DatabaseConnectionManager;
 import server.service.AccountService;
@@ -25,13 +24,12 @@ public class ClientHandler implements Runnable {
     private final TransactionService transactionService;
     private final AccountService accountService;
     private final BankServer bankServer;
-    DatabaseConnectionManager connectionManager;
     @Getter
     private String username;
     @Getter
     private Integer accountId;
 
-    public ClientHandler(Socket clientSocket, BankServer bankServer) {
+    public ClientHandler(Socket clientSocket, BankServer bankServer, DatabaseConnectionManager connectionManager) {
         this.clientSocket = clientSocket;
         this.bankServer = bankServer;
         connectionManager = new DatabaseConnectionManager();

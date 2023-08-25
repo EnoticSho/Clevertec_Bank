@@ -18,12 +18,12 @@ public class AccountDAO {
 
     public Integer getAccountIdByClientLogin(String login, String password) {
         String checkAccountSQL = """
-                    SELECT account_id
-                    FROM account
-                    JOIN client ON account.client_id = client.client_id
-                    WHERE client.username = ?
-                    AND client.password = ?
-                    AND account.bank_id = 1""";
+                SELECT account_id
+                FROM account
+                JOIN client ON account.client_id = client.client_id
+                WHERE client.username = ?
+                AND client.password = ?
+                AND account.bank_id = 1""";
 
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(checkAccountSQL)) {
@@ -138,5 +138,20 @@ public class AccountDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public boolean addPercentByAccount(Double per) {
+        String update = "UPDATE account SET balance = balance / 100 * ( ? + 100 )";
+        try (Connection connection = connectionManager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(update)) {
+            preparedStatement.setDouble(1, per);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                return resultSet.next();
+            }
+        } catch (
+                SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
