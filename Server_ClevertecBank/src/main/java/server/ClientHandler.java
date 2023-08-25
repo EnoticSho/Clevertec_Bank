@@ -1,6 +1,13 @@
 package server;
 
-import model.*;
+import lombok.Getter;
+import model.ErrorMessage;
+import model.Message;
+import model.auth.AuthRequestMessage;
+import model.auth.AuthResponse;
+import model.auth.ServerAuthMessage;
+import model.operations.BalanceResponseMessage;
+import model.operations.ServerOperationMessage;
 import server.service.AccountService;
 import server.service.AuthService;
 
@@ -16,10 +23,13 @@ public class ClientHandler implements Runnable {
     private final ObjectInputStream in;
     private final AuthService authService;
     private final AccountService accountService;
+    private final BankServer bankServer;
+    @Getter
     private String username;
 
-    public ClientHandler(Socket clientSocket) {
+    public ClientHandler(Socket clientSocket, BankServer bankServer) {
         this.clientSocket = clientSocket;
+        this.bankServer = bankServer;
         authService = new AuthService();
         accountService = new AccountService();
         try {
@@ -36,6 +46,7 @@ public class ClientHandler implements Runnable {
             authenticate();
             readMessages();
         } finally {
+            bankServer.removeClient(this);
             closeResources();
         }
     }
@@ -45,19 +56,20 @@ public class ClientHandler implements Runnable {
         while (true) {
             try {
                 final Message message = (Message) in.readObject();
-                if (message instanceof AuthMessage am) {
+                if (message instanceof AuthRequestMessage am) {
                     String login = am.getLogin();
                     String password = am.getPassword();
                     if (authService.isClientExists(login, password)) {
-//                        if (server.isNickBusy(nick)) {
-//                            sendMessage(ErrorMessage.of("Пользователь уже авторизован"));
-//                            continue;
-//                        }
+                        if (bankServer.isUserIn(login)) {
+                            sendMessage(new ErrorMessage("Пользователь уже авторизован"));
+                            continue;
+                        }
                         username = login;
-                        sendMessage(new AuthOk());
+                        bankServer.subscribe(this);
+                        sendMessage(new AuthResponse());
                         break;
                     } else {
-                        sendMessage(new ErrorMessage("Неверные логин и пароль"));
+                        sendMessage(new ErrorMessage("Неверные логин или пароль"));
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
@@ -71,9 +83,9 @@ public class ClientHandler implements Runnable {
         try {
             while (true) {
                 Message message = (Message) in.readObject();
-                if (message instanceof BalanceMessage bm) {
+                if (message instanceof BalanceResponseMessage bm) {
                     BigDecimal currentBalance = accountService.getCurrentBalance(username);
-                    sendMessage(new BalanceMessage(currentBalance));
+                    sendMessage(new BalanceResponseMessage(currentBalance));
                 }
 //                if (message.getCommand() == Command.MESSAGE) {
 //                    final SimpleMessage simpleMessage = (SimpleMessage) message;

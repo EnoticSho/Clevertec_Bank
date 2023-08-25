@@ -1,11 +1,14 @@
-package model;
+package model.auth;
 
-public class AuthMessage implements Message {
+import model.Message;
+import model.MessageType;
+
+public class AuthRequestMessage implements Message {
 
     private final String login;
     private final String password;
 
-    public AuthMessage(String login, String password) {
+    public AuthRequestMessage(String login, String password) {
         this.login = login;
         this.password = password;
     }

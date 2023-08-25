@@ -1,4 +1,7 @@
-package model;
+package model.operations;
+
+import model.Message;
+import model.MessageType;
 
 public class ServerOperationMessage implements Message {
     private final String operations = """

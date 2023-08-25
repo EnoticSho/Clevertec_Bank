@@ -1,17 +1,20 @@
-package model;
+package model.operations;
+
+import model.Message;
+import model.MessageType;
 
 import java.math.BigDecimal;
 
-public class TransferMessage implements Message{
+public class TransferRequestMessage implements Message {
     private String account;
     private BigDecimal bigDecimal;
 
-    public TransferMessage(String account, BigDecimal bigDecimal) {
+    public TransferRequestMessage(String account, BigDecimal bigDecimal) {
         this.account = account;
         this.bigDecimal = bigDecimal;
     }
 
-    public TransferMessage() {}
+    public TransferRequestMessage() {}
 
     @Override
     public MessageType getType() {

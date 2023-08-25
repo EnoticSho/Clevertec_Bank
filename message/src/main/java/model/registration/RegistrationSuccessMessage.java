@@ -1,6 +1,8 @@
-package model;
+package model.registration;
 
 import lombok.Getter;
+import model.Message;
+import model.MessageType;
 
 @Getter
 public class RegistrationSuccessMessage implements Message {

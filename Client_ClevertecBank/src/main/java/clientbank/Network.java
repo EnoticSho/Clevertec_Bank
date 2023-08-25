@@ -1,19 +1,34 @@
 package clientbank;
 
-public class Network<I, O> {
-    private final I inputStream;
-    private final O outputStream;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import model.Message;
 
-    public Network(I inputStream, O outputStream) {
-        this.inputStream = inputStream;
-        this.outputStream = outputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+@RequiredArgsConstructor
+@AllArgsConstructor
+public class Network {
+
+    private ObjectInputStream input;
+    private ObjectOutputStream output;
+
+    public void sendMessage(Message message) throws IOException {
+        output.writeObject(message);
     }
 
-    public I getInputStream() {
-        return inputStream;
+    public Message receiveMessage() throws IOException, ClassNotFoundException {
+        return (Message) input.readObject();
     }
 
-    public O getOutputStream() {
-        return outputStream;
+    public void close() throws IOException {
+        if (input != null) {
+            input.close();
+        }
+        if (output != null) {
+            output.close();
+        }
     }
 }

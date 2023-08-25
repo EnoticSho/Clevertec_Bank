@@ -1,6 +1,9 @@
-package model;
+package model.auth;
 
-public class AuthOk implements Message {
+import model.Message;
+import model.MessageType;
+
+public class AuthResponse implements Message {
 
     private final String authOk = "Успешная авторизация";
 

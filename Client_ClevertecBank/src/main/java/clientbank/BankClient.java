@@ -1,15 +1,20 @@
 package clientbank;
 
 import model.*;
+import model.auth.AuthRequestMessage;
+import model.auth.AuthResponse;
+import model.auth.ServerAuthMessage;
+import model.operations.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
 
 public class BankClient {
-    private final String SERVER_IP = "127.0.0.1";
-    private final int SERVER_PORT = 8761;
-    private Network<ObjectInputStream, ObjectOutputStream> network;
+    private static final String SERVER_IP = "127.0.0.1";
+    private static final int SERVER_PORT = 8761;
+    private Network network;
+    private Socket socket;
     private final Scanner scanner;
 
     public BankClient() {
@@ -18,8 +23,9 @@ public class BankClient {
     }
 
     private void initNetwork() {
-        try (Socket socket = new Socket(SERVER_IP, SERVER_PORT)) {
-            network = new Network<>(
+        try {
+            socket = new Socket(SERVER_IP, SERVER_PORT);
+            network = new Network(
                     new ObjectInputStream(socket.getInputStream()),
                     new ObjectOutputStream(socket.getOutputStream()));
             authenticate();
@@ -27,16 +33,18 @@ public class BankClient {
         } catch (Exception e) {
             System.err.println("Failed to initialize network connection.");
             e.printStackTrace();
+        } finally {
+            close();
         }
     }
 
     private void authenticate() {
         try {
             while (true) {
-                Message message = (Message) network.getInputStream().readObject();
+                Message message = network.receiveMessage();
                 if (message instanceof ServerAuthMessage sam) {
                     handleServerAuthMessage(sam);
-                } else if (message instanceof AuthOk ao) {
+                } else if (message instanceof AuthResponse ao) {
                     System.out.println(ao.getAuthOk());
                     break;
                 } else if (message instanceof ErrorMessage em) {
@@ -51,19 +59,21 @@ public class BankClient {
 
     private void handleServerAuthMessage(ServerAuthMessage sam) throws IOException {
         System.out.println(sam.getString());
+        System.out.print("Enter login: ");
         String login = scanner.nextLine();
+        System.out.print("Enter password: ");
         String password = scanner.nextLine();
-        sendMessage(new AuthMessage(login, password));
+        sendMessage(new AuthRequestMessage(login, password));
     }
 
     private void readMessages() {
         try {
             while (true) {
-                Message message = (Message) network.getInputStream().readObject();
+                Message message = network.receiveMessage();
                 if (message instanceof ServerOperationMessage) {
                     handleServerOperationMessage((ServerOperationMessage) message);
-                } else if (message instanceof BalanceMessage) {
-                    System.out.println("Your balance: " + ((BalanceMessage) message).getBalance());
+                } else if (message instanceof BalanceResponseMessage) {
+                    System.out.println("Your balance: " + ((BalanceResponseMessage) message).getBalance());
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -75,20 +85,35 @@ public class BankClient {
     private void handleServerOperationMessage(ServerOperationMessage som) throws IOException {
         System.out.println(som.getOperations());
         int num = Integer.parseInt(scanner.nextLine());
-        if (num == 1) {
-            sendMessage(new BalanceMessage());
-        } else if (num == 4) {
-
-            sendMessage(new TransferMessage());
+        switch (num) {
+            case 1 -> sendMessage(new BalanceRequestMessage());
+            case 2 -> sendMessage(new WithdrawalRequestMessage());
+            case 3 -> sendMessage(new DepositRequestMessage());
+            case 4 -> sendMessage(new TransferRequestMessage());
+            default -> {
+            }
         }
-        // Handle other operation options here
     }
 
     public void sendMessage(Message message) {
         try {
-            network.getOutputStream().writeObject(message);
+            network.sendMessage(message);
         } catch (IOException e) {
             System.err.println("Failed to send message.");
+            e.printStackTrace();
+        }
+    }
+
+    private void close() {
+        try {
+            if (network != null) {
+                network.close();
+            }
+            if (socket != null) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Error while closing resources.");
             e.printStackTrace();
         }
     }
