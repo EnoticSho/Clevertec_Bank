@@ -1,151 +1,162 @@
 package clientbank;
 
-import model.*;
-import model.auth.AuthRequestMessage;
+import model.ErrorMessage;
+import model.Message;
 import model.auth.AuthResponse;
-import model.auth.ServerAuthMessage;
-import model.operations.*;
+import model.operations.BalanceResponseMessage;
+import model.operations.DepositResponseMessage;
+import model.operations.TransferResponseMessage;
+import model.operations.WithdrawalResponseMessage;
 
-import java.io.*;
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.*;
 import java.util.Scanner;
 
 public class BankClient {
-    private static final String SERVER_IP = "127.0.0.1";
-    private static final int SERVER_PORT = 8761;
-    private Network network;
-    private Socket socket;
     private final Scanner scanner;
+    private final BankService bankService;
+    private boolean isAuthenticated = false;
 
-    public BankClient() {
+    public BankClient(BankService bankService) {
+        this.bankService = bankService;
         scanner = new Scanner(System.in);
-        initNetwork();
     }
 
-    private void initNetwork() {
-        try {
-            socket = new Socket(SERVER_IP, SERVER_PORT);
-            network = new Network(
-                    new ObjectInputStream(socket.getInputStream()),
-                    new ObjectOutputStream(socket.getOutputStream()));
-            authenticate();
-            readMessages();
-        } catch (Exception e) {
-            System.err.println("Failed to initialize network connection.");
-            e.printStackTrace();
-        } finally {
-            close();
+    public void start() {
+        System.out.println("Welcome to the CleverBank.");
+
+        authenticate();
+
+        if (isAuthenticated) {
+            while (true) {
+                displayMenu();
+                int choice = scanner.nextInt();
+                scanner.nextLine();
+                handleUserChoice(choice);
+            }
+        }
+        scanner.close();
+    }
+
+    private void displayMenu() {
+        System.out.println("""
+            1. checkBalance
+            2. deposit
+            3. withdrawal
+            4. transfer
+            0. Exit
+            """);
+    }
+
+    private void handleUserChoice(int choice) {
+        switch (choice) {
+            case 1 -> checkBalance();
+            case 2 -> deposit();
+            case 3 -> withdrawal();
+            case 4 -> transfer();
+            case 0 -> {
+                System.out.println("Exiting...");
+                bankService.close();
+                System.exit(0);
+            }
+            default -> System.out.println("Invalid choice. Please try again.");
         }
     }
 
     private void authenticate() {
-        try {
-            while (true) {
-                handleServerAuthMessage();
-                Message message = network.receiveMessage();
-                if (message instanceof AuthResponse ao) {
-                    System.out.println(ao.getAuthOk());
-                    break;
-                } else if (message instanceof ErrorMessage em) {
-                    System.out.println(em.getErrorMessage());
+        boolean authenticationSuccess = false;
+
+        while (!authenticationSuccess) {
+            System.out.print("Enter login: ");
+            String login = scanner.nextLine();
+            System.out.print("Enter password: ");
+            String password = scanner.nextLine();
+
+            try {
+                Message response = bankService.authenticate(login, password);
+
+                if (response instanceof AuthResponse ar) {
+                    isAuthenticated = ar.getAuthOk();
+                    if (isAuthenticated) {
+                        authenticationSuccess = true;
+                    } else {
+                        System.out.println("Authentication failed. Please try again.");
+                    }
+                } else if (response instanceof ErrorMessage) {
+                    System.out.println(((ErrorMessage) response).getErrorMessage());
                 }
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println("Error during authentication.");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void checkBalance() {
+        try {
+            Message response = bankService.sendBalanceRequest();
+            if (response instanceof BalanceResponseMessage brm) {
+                System.out.println(brm.getMessage());
+            } else if(response instanceof ErrorMessage em){
+                System.out.println(em.getErrorMessage());
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Authentication failed.");
+            System.err.println("Error during deposit.");
             e.printStackTrace();
         }
     }
 
-    private void handleServerAuthMessage() throws IOException {
-        System.out.println(new ServerAuthMessage().getString());
-        System.out.print("Enter login: ");
-        String login = scanner.nextLine();
-        System.out.print("Enter password: ");
-        String password = scanner.nextLine();
-        sendMessage(new AuthRequestMessage(login, password));
-    }
+    private void deposit() {
+        System.out.print("Enter amount to deposit: ");
+        BigDecimal bigDecimal = scanner.nextBigDecimal();
+        System.out.println(bigDecimal);
 
-    private void readMessages() {
         try {
-            while (true) {
-                handleServerOperationMessage();
-                Message message = network.receiveMessage();
-                if (message instanceof BalanceResponseMessage brm) {
-                    printText(brm.getMessage(), scanner);
-                } else if (message instanceof DepositResponseMessage drm) {
-                    printText(drm.getMessage(), scanner);
-                } else if (message instanceof WithdrawalResponseMessage wrm) {
-                    printText(wrm.getMessage(), scanner);
-                } else if (message instanceof TransferResponseMessage trm) {
-                    printText(trm.getMessage(), scanner);
-                }
+            Message response = bankService.deposit(bigDecimal);
+            if (response instanceof DepositResponseMessage) {
+                System.out.println(((DepositResponseMessage) response).getMessage());
+            } else if(response instanceof ErrorMessage em){
+                System.out.println(em.getErrorMessage());
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Error while reading messages. Server might be offline.");
+            System.err.println("Error during deposit.");
             e.printStackTrace();
         }
     }
 
-    private void handleServerOperationMessage() throws IOException {
-        System.out.println(new ServerOperationMessage().getOperations());
-        int num = Integer.parseInt(scanner.nextLine());
-        switch (num) {
-            case 1 -> {
-                sendMessage(new BalanceRequestMessage());
-            }
-            case 2 -> {
-                System.out.print("Enter amount of withdrawal: ");
-                BigDecimal bg = BigDecimal.valueOf(Long.parseLong(scanner.nextLine()));
-                sendMessage(new WithdrawalRequestMessage(bg));
-            }
-            case 3 -> {
-                System.out.print("Enter amount of deposit: ");
-                BigDecimal bg = BigDecimal.valueOf(Long.parseLong(scanner.nextLine()));
-                sendMessage(new DepositRequestMessage(bg));
-            }
-            case 4 -> {
-                System.out.print("Enter amount of deposit: ");
-                BigDecimal bg = BigDecimal.valueOf(Long.parseLong(scanner.nextLine()));
-                System.out.print("Enter number of account: ");
-                String accountNumber = scanner.nextLine();
-                sendMessage(new TransferRequestMessage(accountNumber, bg));
-            }
-            case 5 -> {
-                close();
-            }
-        }
-    }
+    private void withdrawal() {
+        System.out.print("Enter amount to withdraw: ");
+        BigDecimal bigDecimal = scanner.nextBigDecimal();
 
-    public void sendMessage(Message message) {
         try {
-            network.sendMessage(message);
-        } catch (IOException e) {
-            System.err.println("Failed to send message.");
+            Message response = bankService.withdrawal(bigDecimal);
+            if (response instanceof WithdrawalResponseMessage) {
+                System.out.println(((WithdrawalResponseMessage) response).getMessage());
+            } else if(response instanceof ErrorMessage em){
+                System.out.println(em.getErrorMessage());
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Error during withdrawal.");
             e.printStackTrace();
         }
     }
 
-    private void printText(String s, Scanner scanner) {
-        System.out.println(s);
-        System.out.println("""
-                            1. Продолжить
-                            2. Выйти
-                            """);
-        int a = Integer.parseInt(scanner.nextLine());
-        if (a == 2) close();
-    }
+    private void transfer() {
+        System.out.print("Enter amount to transfer: ");
+        BigDecimal bigDecimal = scanner.nextBigDecimal();
 
-    private void close() {
+        System.out.print("Enter account number to transfer to: ");
+        String accountNumber = scanner.next();
+
         try {
-            if (socket != null) {
-                socket.close();
+            Message response = bankService.transfer(accountNumber, bigDecimal);
+            if (response instanceof TransferResponseMessage) {
+                System.out.println(((TransferResponseMessage) response).getMessage());
+            } else if(response instanceof ErrorMessage em){
+                System.out.println(em.getErrorMessage());
             }
-            if (network != null) {
-                network.close();
-            }
-        } catch (IOException e) {
-            System.err.println("Error while closing resources.");
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Error during transfer.");
             e.printStackTrace();
         }
     }

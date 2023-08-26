@@ -1,8 +1,8 @@
 package clientbank;
 
-import java.io.IOException;
 public class ClientRunner {
-    public static void main(String[] args) throws IOException {
-        new BankClient();
+    public static void main(String[] args) {
+        BankClient bankClient = new BankClient(new BankService());
+        bankClient.start();
     }
 }

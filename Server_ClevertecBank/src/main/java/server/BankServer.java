@@ -1,5 +1,6 @@
 package server;
 
+import server.config.ConfigurationLoader;
 import server.dbConnection.DatabaseConnectionManager;
 import server.service.AccountService;
 
@@ -46,16 +47,18 @@ public class BankServer {
     }
 
     public void startInterestTask() {
-        ScheduledFuture<?> interestTask = scheduler.scheduleWithFixedDelay(() -> {
-            if (LocalDate.now().isLeapYear()) {
-                try {
-                    double interestRate = Config.getInterestRate();
+        Map<String, Object> config;
+        try {
+            config = new ConfigurationLoader().loadConfig();
+            Double interestRate = (Double) config.get("interestRate");
+            scheduler.scheduleWithFixedDelay(() -> {
+                if (LocalDate.now().isLeapYear()) {
                     applyInterest(interestRate);
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
-            }
-        }, 0, 30, TimeUnit.SECONDS);
+            }, 0, 30, TimeUnit.SECONDS);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void applyInterest(double interestRate) {

@@ -15,15 +15,12 @@ public class DatabaseConnectionManager {
 
     public DatabaseConnectionManager() {
         try {
-            ConfigurationLoader configLoader = new ConfigurationLoader("Server_ClevertecBank/src/main/resources/application.yml");
-            Map<String, Object> config = configLoader.loadConfig();
+            Map<String, Object> config = new ConfigurationLoader().loadConfig();
 
             HikariConfig hikariConfig = new HikariConfig();
             hikariConfig.setJdbcUrl((String) config.get("dbUrl"));
             hikariConfig.setUsername((String) config.get("dbUsername"));
             hikariConfig.setPassword((String) config.get("dbPassword"));
-
-            // Additional HikariCP settings can be set on the hikariConfig object if needed.
 
             dataSource = new HikariDataSource(hikariConfig);
 
@@ -36,7 +33,6 @@ public class DatabaseConnectionManager {
         return dataSource.getConnection();
     }
 
-    // Call this method when shutting down your application to release all resources
     public void close() {
         if (dataSource != null) {
             dataSource.close();

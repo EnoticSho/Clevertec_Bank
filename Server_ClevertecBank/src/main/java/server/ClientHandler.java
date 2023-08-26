@@ -70,7 +70,7 @@ public class ClientHandler implements Runnable {
                         }
                         username = login;
                         bankServer.subscribe(this);
-                        sendMessage(new AuthResponse());
+                        sendMessage(new AuthResponse(true));
                         break;
                     } else {
                         sendMessage(new ErrorMessage("Неверный логин или пароль"));
