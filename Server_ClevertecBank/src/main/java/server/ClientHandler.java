@@ -87,7 +87,7 @@ public class ClientHandler implements Runnable {
             while (true) {
                 Message message = (Message) in.readObject();
                 if (message instanceof BalanceRequestMessage) {
-                    BigDecimal currentBalance = accountService.getCurrentBalance(username);
+                    BigDecimal currentBalance = accountService.getCurrentBalance(accountId);
                     sendMessage(new BalanceResponseMessage(currentBalance));
                 }else if (message instanceof DepositRequestMessage drm) {
                     if (transactionService.deposit(accountId, drm.getAmount())) {

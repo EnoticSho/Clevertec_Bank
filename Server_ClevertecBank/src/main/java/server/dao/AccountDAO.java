@@ -44,12 +44,10 @@ public class AccountDAO {
         String depositSQL = "UPDATE account SET balance = balance + ? WHERE account_id = ?";
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(depositSQL)) {
-            if (isAccountExists(accountId)) {
                 preparedStatement.setBigDecimal(1, amount);
                 preparedStatement.setInt(2, accountId);
                 int rowsUpdated = preparedStatement.executeUpdate();
                 return rowsUpdated > 0;
-            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -60,27 +58,14 @@ public class AccountDAO {
         String withdrawSQL = "UPDATE account SET balance = balance - ? WHERE account_id = ?";
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(withdrawSQL)) {
-            if (isAccountExists(accountId) && hasSufficientBalance(accountId, amount)) {
                 preparedStatement.setBigDecimal(1, amount);
                 preparedStatement.setInt(2, accountId);
                 int rowsUpdated = preparedStatement.executeUpdate();
                 return rowsUpdated > 0;
-            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
-    }
-
-    private boolean isAccountExists(int accountId) throws SQLException {
-        String checkAccountSQL = "SELECT account_id FROM account WHERE account_id = ?";
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(checkAccountSQL)) {
-            preparedStatement.setInt(1, accountId);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                return resultSet.next();
-            }
-        }
     }
 
     private boolean hasSufficientBalance(int accountId, BigDecimal amount) throws SQLException {
@@ -98,17 +83,14 @@ public class AccountDAO {
         return false;
     }
 
-    public BigDecimal getCurrentBalance(String username) {
+    public BigDecimal getCurrentBalance(int accountId) {
         String getBalanceSQL = """
-                SELECT a.balance
-                FROM account a
-                JOIN client c ON a.client_id = c.client_id
-                WHERE c.username = ? And a.bank_id = 1
-                LIMIT 1""";
-
+                SELECT balance
+                FROM account
+                WHERE account_id = ?""";
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(getBalanceSQL)) {
-            preparedStatement.setString(1, username);
+            preparedStatement.setInt(1, accountId);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     return resultSet.getBigDecimal("balance");
