@@ -7,12 +7,11 @@ CREATE TABLE client (
                         client_id serial PRIMARY KEY,
                         first_name VARCHAR(50) NOT NULL,
                         last_name VARCHAR(50) NOT NULL,
-                        email VARCHAR(100) UNIQUE NOT NULL,
                         username VARCHAR(50) UNIQUE NOT NULL,
                         password VARCHAR(255) NOT NULL
 );
 
-CREATE TYPE currency_type AS ENUM ('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'Other');
+CREATE TYPE currency_type AS ENUM ('BYN', 'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'Other');
 
 CREATE TYPE transaction_type AS ENUM ('Deposit', 'Withdrawal', 'Transfer', 'Payment', 'Other');
 

@@ -15,7 +15,7 @@ public class TransactionDAO {
         this.connectionManager = connectionManager;
     }
 
-    public void createTransaction(Transaction transaction) throws SQLException {
+    public void createTransaction(Transaction transaction) {
         if (transaction == null) {
             throw new IllegalArgumentException("Transaction object is null");
         }
@@ -23,29 +23,27 @@ public class TransactionDAO {
         String sql = "INSERT INTO transaction (amount, transaction_date, sender_account_id, receiver_account_id, transaction_type) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = connectionManager.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
 
-            pstmt.setBigDecimal(1, transaction.getAmount());
-            pstmt.setTimestamp(2, transaction.getTransactionDate());
+            stmt.setBigDecimal(1, transaction.getAmount());
+            stmt.setTimestamp(2, transaction.getTransactionDate());
 
             if (transaction.getSenderAccountId() != null) {
-                pstmt.setInt(3, transaction.getSenderAccountId());
+                stmt.setInt(3, transaction.getSenderAccountId());
             } else {
-                pstmt.setNull(3, Types.INTEGER);
+                stmt.setNull(3, Types.INTEGER);
             }
 
             if (transaction.getReceiverAccountId() != null) {
-                pstmt.setInt(4, transaction.getReceiverAccountId());
+                stmt.setInt(4, transaction.getReceiverAccountId());
             } else {
-                pstmt.setNull(4, Types.INTEGER);
+                stmt.setNull(4, Types.INTEGER);
             }
 
-            pstmt.setObject(5, transaction.getTransactionType().name(), Types.OTHER);
-            pstmt.executeUpdate();
+            stmt.setObject(5, transaction.getTransactionType().name(), Types.OTHER);
+            stmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();  // Updated this to print the stack trace for better debugging.
+            e.printStackTrace();
         }
     }
-
-    // Additional methods for fetching, updating, or deleting transactions can be added as required.
 }

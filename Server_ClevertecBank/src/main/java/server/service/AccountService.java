@@ -1,5 +1,6 @@
 package server.service;
 
+import server.AccountDTO;
 import server.dao.AccountDAO;
 import server.dbConnection.DatabaseConnectionManager;
 import java.math.BigDecimal;
@@ -34,5 +35,9 @@ public class AccountService {
 
     public void addPercentByAccount(Double per) {
         accountDAO.addPercentByAccount(per);
+    }
+
+    public AccountDTO getAccountDTOById(int accountId) {
+        return accountDAO.getAccountDTOById(accountId);
     }
 }

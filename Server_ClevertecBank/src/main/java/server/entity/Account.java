@@ -12,6 +12,6 @@ public class Account {
     private String accountNumber;
     private BigDecimal balance;
     private CurrencyType currency;
-    private int clientId;
-    private int bankId;
+    private Integer clientId;
+    private Integer bankId;
 }

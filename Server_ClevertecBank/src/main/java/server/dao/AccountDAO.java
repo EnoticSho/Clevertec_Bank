@@ -1,5 +1,6 @@
 package server.dao;
 
+import server.AccountDTO;
 import server.dbConnection.DatabaseConnectionManager;
 
 import java.math.BigDecimal;
@@ -16,6 +17,33 @@ public class AccountDAO {
         this.connectionManager = connectionManager;
     }
 
+    public AccountDTO getAccountDTOById(int accountId) {
+        String query = """
+                SELECT a.account_number, b.name
+                FROM Account a
+                JOIN bank b ON a.bank_id = b.bank_id
+                WHERE a.account_id = ?""";
+        try (Connection connection = connectionManager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, accountId);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    AccountDTO accountDTO = new AccountDTO();
+                    accountDTO.setAccountId(accountId);
+                    accountDTO.setAccountNumber(resultSet.getString("account_number"));
+                    accountDTO.setBankName(resultSet.getString("name"));
+                    return accountDTO;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     public Integer getAccountIdByClientLogin(String login, String password) {
         String checkAccountSQL = """
                 SELECT account_id
@@ -24,7 +52,6 @@ public class AccountDAO {
                 WHERE client.username = ?
                 AND client.password = ?
                 AND account.bank_id = 1""";
-
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(checkAccountSQL)) {
             preparedStatement.setString(1, login);
@@ -41,13 +68,16 @@ public class AccountDAO {
     }
 
     public boolean deposit(int accountId, BigDecimal amount) {
-        String depositSQL = "UPDATE account SET balance = balance + ? WHERE account_id = ?";
+        String depositSQL = """
+                UPDATE account
+                SET balance = balance + ?
+                WHERE account_id = ?""";
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(depositSQL)) {
-                preparedStatement.setBigDecimal(1, amount);
-                preparedStatement.setInt(2, accountId);
-                int rowsUpdated = preparedStatement.executeUpdate();
-                return rowsUpdated > 0;
+            preparedStatement.setBigDecimal(1, amount);
+            preparedStatement.setInt(2, accountId);
+            int rowsUpdated = preparedStatement.executeUpdate();
+            return rowsUpdated > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -55,30 +85,18 @@ public class AccountDAO {
     }
 
     public boolean withdraw(int accountId, BigDecimal amount) {
-        String withdrawSQL = "UPDATE account SET balance = balance - ? WHERE account_id = ?";
+        String withdrawSQL = """
+                UPDATE account
+                SET balance = balance - ?
+                WHERE account_id = ?""";
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(withdrawSQL)) {
-                preparedStatement.setBigDecimal(1, amount);
-                preparedStatement.setInt(2, accountId);
-                int rowsUpdated = preparedStatement.executeUpdate();
-                return rowsUpdated > 0;
+            preparedStatement.setBigDecimal(1, amount);
+            preparedStatement.setInt(2, accountId);
+            int rowsUpdated = preparedStatement.executeUpdate();
+            return rowsUpdated > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-        return false;
-    }
-
-    private boolean hasSufficientBalance(int accountId, BigDecimal amount) throws SQLException {
-        String getBalanceSQL = "SELECT balance FROM account WHERE account_id = ?";
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(getBalanceSQL)) {
-            preparedStatement.setInt(1, accountId);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    BigDecimal balance = resultSet.getBigDecimal("balance");
-                    return balance.compareTo(amount) >= 0;
-                }
-            }
         }
         return false;
     }
@@ -107,7 +125,6 @@ public class AccountDAO {
                 SELECT account_id
                 FROM account
                 WHERE account.account_number = ?""";
-
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(getAccountIdSQL)) {
             preparedStatement.setString(1, number);
@@ -123,7 +140,9 @@ public class AccountDAO {
     }
 
     public boolean addPercentByAccount(Double per) {
-        String update = "UPDATE account SET balance = balance / 100 * ( ? + 100 )";
+        String update = """
+                UPDATE account
+                SET balance = balance / 100 * ( ? + 100 )""";
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(update)) {
             preparedStatement.setDouble(1, per);
