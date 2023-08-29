@@ -2,6 +2,7 @@ package server;
 
 import lombok.Getter;
 import model.ErrorMessage;
+import model.ExitMessage;
 import model.Message;
 import model.auth.AuthRequestMessage;
 import model.auth.AuthResponse;
@@ -21,8 +22,11 @@ public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
+    private static final int MAX_ATTEMPTS = 5;
+    private final DatabaseConnectionManager connectionManager;
     private final TransactionService transactionService;
     private final AccountService accountService;
+
     private final BankServer bankServer;
     @Getter
     private String username;
@@ -32,9 +36,11 @@ public class ClientHandler implements Runnable {
     public ClientHandler(Socket clientSocket, BankServer bankServer, DatabaseConnectionManager connectionManager) {
         this.clientSocket = clientSocket;
         this.bankServer = bankServer;
-        connectionManager = new DatabaseConnectionManager();
-        transactionService = new TransactionService(connectionManager);
-        accountService = new AccountService(connectionManager);
+
+        this.connectionManager = connectionManager;
+
+        this.transactionService = new TransactionService(connectionManager);
+        this.accountService = new AccountService(connectionManager);
         try {
             this.out = new ObjectOutputStream(clientSocket.getOutputStream());
             this.in = new ObjectInputStream(clientSocket.getInputStream());
@@ -55,17 +61,25 @@ public class ClientHandler implements Runnable {
     }
 
     private void authenticate() {
+        int attempts = 0;
+
         while (true) {
+            if (attempts >= MAX_ATTEMPTS) {
+                sendMessage(new ErrorMessage("Maximum authentication attempts reached. Closing connection."));
+                closeResources();
+                return;
+            }
+
             try {
                 final Message message = (Message) in.readObject();
                 if (message instanceof AuthRequestMessage am) {
                     String login = am.getLogin();
                     String password = am.getPassword();
-                    System.out.println(password);
                     accountId = accountService.getAccountIdByClientLogin(login, password);
                     if (accountId != null) {
                         if (bankServer.isUserIn(login)) {
-                            sendMessage(new ErrorMessage("Пользователь уже авторизован"));
+                            sendMessage(new ErrorMessage("User is already authenticated."));
+                            attempts++;
                             continue;
                         }
                         username = login;
@@ -73,10 +87,13 @@ public class ClientHandler implements Runnable {
                         sendMessage(new AuthResponse(true));
                         break;
                     } else {
-                        sendMessage(new ErrorMessage("Неверный логин или пароль"));
+                        sendMessage(new ErrorMessage("Incorrect username or password."));
+                        attempts++;
+
+                        Thread.sleep(attempts * 2000);
                     }
                 }
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (IOException | ClassNotFoundException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -89,18 +106,18 @@ public class ClientHandler implements Runnable {
                 if (message instanceof BalanceRequestMessage) {
                     BigDecimal currentBalance = accountService.getCurrentBalance(accountId);
                     sendMessage(new BalanceResponseMessage(currentBalance));
-                }else if (message instanceof DepositRequestMessage drm) {
-                    if (transactionService.deposit(accountId, drm.getAmount())) {
-                        sendMessage(new DepositResponseMessage(drm.getAmount()));
-                    }
-                }else if (message instanceof WithdrawalRequestMessage wrm) {
-                    if (transactionService.withdraw(accountId, wrm.getAmount())) {
-                        sendMessage(new WithdrawalResponseMessage(wrm.getAmount()));
-                    }
-                }else if (message instanceof TransferRequestMessage trm) {
-                    if (transactionService.transfer(accountId, trm.getAccount(), trm.getBigDecimal())) {
-                        sendMessage(new TransferResponseMessage(trm.getAccount(), trm.getBigDecimal()));
-                    }
+                } else if (message instanceof DepositRequestMessage drm) {
+                    transactionService.deposit(accountId, drm.getAmount());
+                    sendMessage(new DepositResponseMessage(drm.getAmount()));
+                } else if (message instanceof WithdrawalRequestMessage wrm) {
+                    transactionService.withdraw(accountId, wrm.getAmount());
+                    sendMessage(new WithdrawalResponseMessage(wrm.getAmount()));
+                } else if (message instanceof TransferRequestMessage trm) {
+                    transactionService.transfer(accountId, trm.getAccount(), trm.getBigDecimal());
+                    sendMessage(new TransferResponseMessage(trm.getAccount(), trm.getBigDecimal()));
+                } else if (message instanceof ExitMessage em) {
+                    bankServer.removeClient(this);
+                    closeResources();
                 }
             }
         } catch (IOException | ClassNotFoundException e) {

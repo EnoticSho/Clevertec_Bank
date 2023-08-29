@@ -54,11 +54,7 @@ public class BankClient {
             case 2 -> deposit();
             case 3 -> withdrawal();
             case 4 -> transfer();
-            case 0 -> {
-                System.out.println("Exiting...");
-                bankService.close();
-                System.exit(0);
-            }
+            case 0 -> exit();
             default -> System.out.println("Invalid choice. Please try again.");
         }
     }
@@ -159,5 +155,16 @@ public class BankClient {
             System.err.println("Error during transfer.");
             e.printStackTrace();
         }
+    }
+
+    private void exit() {
+        System.out.println("Exiting...");
+        try {
+            bankService.exit();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        bankService.close();
+        System.exit(0);
     }
 }

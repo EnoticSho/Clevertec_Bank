@@ -9,6 +9,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -29,6 +30,7 @@ public class BankServer {
     }
 
     public void run() {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         startInterestTask();
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
 
@@ -52,7 +54,8 @@ public class BankServer {
             config = new ConfigurationLoader().loadConfig();
             Double interestRate = (Double) config.get("interestRate");
             scheduler.scheduleWithFixedDelay(() -> {
-                if (LocalDate.now().isLeapYear()) {
+                LocalDate now = LocalDate.now();
+                if (now.equals(now.with(TemporalAdjusters.lastDayOfMonth()))) {
                     applyInterest(interestRate);
                 }
             }, 0, 30, TimeUnit.SECONDS);
@@ -75,5 +78,33 @@ public class BankServer {
 
     public synchronized void removeClient(ClientHandler clientHandler) {
         clients.remove(clientHandler.getUsername());
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
+
+        scheduler.shutdown();
+
+        try {
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+
+                if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                    System.err.println("ExecutorService did not terminate.");
+                }
+            }
+
+            if (!scheduler.awaitTermination(60, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+                if (!scheduler.awaitTermination(60, TimeUnit.SECONDS)) {
+                    System.err.println("Scheduler did not terminate.");
+                }
+            }
+        } catch (InterruptedException ie) {
+            executorService.shutdownNow();
+            scheduler.shutdownNow();
+
+            Thread.currentThread().interrupt();
+        }
     }
 }

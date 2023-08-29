@@ -70,4 +70,8 @@ public class BankService {
             e.printStackTrace();
         }
     }
+
+    public void exit() throws IOException {
+        network.sendMessage(new ExitMessage());
+    }
 }

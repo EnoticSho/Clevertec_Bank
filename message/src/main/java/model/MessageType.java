@@ -4,7 +4,11 @@ public enum MessageType {
     AUTH,
     AUTH_OK,
     ERROR_MESSAGE,
-    REGISTRATION,
+    Deposit,
+    Withdrawal,
+    Balance,
+    Transfer,
     REG_OK,
-    SERVER_AUTH
+    REGISTRATION,
+    Exit
 }

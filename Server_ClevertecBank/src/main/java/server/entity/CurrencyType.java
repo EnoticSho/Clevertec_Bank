@@ -3,7 +3,7 @@ package server.entity;
 public enum CurrencyType {
     USD,
     EUR,
-    GBP,
+    BYN,
     JPY,
     CAD,
     AUD,

@@ -15,6 +15,6 @@ public class WithdrawalResponseMessage implements Message {
 
     @Override
     public MessageType getType() {
-        return null;
+        return MessageType.Withdrawal;
     }
 }

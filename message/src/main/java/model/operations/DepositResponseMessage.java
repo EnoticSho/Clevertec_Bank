@@ -16,6 +16,6 @@ public class DepositResponseMessage implements Message {
 
     @Override
     public MessageType getType() {
-        return null;
+        return MessageType.Deposit;
     }
 }

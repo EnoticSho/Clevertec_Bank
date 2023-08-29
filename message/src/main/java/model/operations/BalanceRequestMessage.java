@@ -7,6 +7,6 @@ public class BalanceRequestMessage implements Message {
 
     @Override
     public MessageType getType() {
-        return null;
+        return MessageType.Balance;
     }
 }
