@@ -1,6 +1,7 @@
 package server;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import model.ErrorMessage;
 import model.ExitMessage;
 import model.Message;
@@ -18,12 +19,18 @@ import java.math.BigDecimal;
 import java.net.Socket;
 import java.sql.SQLException;
 
+
+/**
+ * Handles individual client connections, facilitating authentication,
+ * reading messages, and performing transactions on behalf of the client.
+ *
+ */
+@Slf4j
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
     private static final int MAX_ATTEMPTS = 5;
-    private final DatabaseConnectionManager connectionManager;
     private final TransactionService transactionService;
     private final AccountService accountService;
 
@@ -33,22 +40,28 @@ public class ClientHandler implements Runnable {
     @Getter
     private Integer accountId;
 
-    public ClientHandler(Socket clientSocket, BankServer bankServer, DatabaseConnectionManager connectionManager) {
+    /**
+     * Creates a new client handler for a given socket connection and bank server instance.
+     *
+     * @param clientSocket The socket representing the client connection.
+     * @param bankServer The main server instance.
+     * @param connectionManager The database connection manager.
+     * @throws IOException If there's an error setting up the input/output streams.
+     */
+    public ClientHandler(Socket clientSocket, BankServer bankServer, DatabaseConnectionManager connectionManager) throws IOException {
         this.clientSocket = clientSocket;
         this.bankServer = bankServer;
 
-        this.connectionManager = connectionManager;
-
         this.transactionService = new TransactionService(connectionManager);
         this.accountService = new AccountService(connectionManager);
-        try {
-            this.out = new ObjectOutputStream(clientSocket.getOutputStream());
-            this.in = new ObjectInputStream(clientSocket.getInputStream());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+        this.out = new ObjectOutputStream(clientSocket.getOutputStream());
+        this.in = new ObjectInputStream(clientSocket.getInputStream());
     }
 
+    /**
+     * Authenticates the client, reads their messages, and handles their requests.
+     */
     @Override
     public void run() {
         try {
@@ -60,6 +73,9 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Authenticates the user by checking their credentials against the database.
+     */
     private void authenticate() {
         int attempts = 0;
 
@@ -89,60 +105,102 @@ public class ClientHandler implements Runnable {
                     } else {
                         sendMessage(new ErrorMessage("Incorrect username or password."));
                         attempts++;
-
-                        Thread.sleep(attempts * 2000);
                     }
                 }
-            } catch (IOException | ClassNotFoundException | InterruptedException e) {
-                throw new RuntimeException(e);
+            } catch (IOException | ClassNotFoundException e) {
+                log.error("Error occurred during authentication for user {}", username, e);
             }
         }
     }
 
+    /**
+     * Continuously reads messages from the client and dispatches them for processing.
+     */
     private void readMessages() {
         try {
             while (true) {
                 Message message = (Message) in.readObject();
-                if (message instanceof BalanceRequestMessage) {
-                    BigDecimal currentBalance = accountService.getCurrentBalance(accountId);
-                    sendMessage(new BalanceResponseMessage(currentBalance));
-                } else if (message instanceof DepositRequestMessage drm) {
-                    transactionService.deposit(accountId, drm.getAmount());
-                    sendMessage(new DepositResponseMessage(drm.getAmount()));
-                } else if (message instanceof WithdrawalRequestMessage wrm) {
-                    transactionService.withdraw(accountId, wrm.getAmount());
-                    sendMessage(new WithdrawalResponseMessage(wrm.getAmount()));
-                } else if (message instanceof TransferRequestMessage trm) {
-                    transactionService.transfer(accountId, trm.getAccount(), trm.getBigDecimal());
-                    sendMessage(new TransferResponseMessage(trm.getAccount(), trm.getBigDecimal()));
-                } else if (message instanceof ExitMessage em) {
-                    bankServer.removeClient(this);
-                    closeResources();
-                }
+                handleReceivedMessage(message);
             }
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            log.error("Error reading messages", e);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error("Database error", e);
         }
     }
 
+    /**
+     * Handles received messages and takes appropriate actions based on the message type.
+     *
+     * @param message The received message from the client.
+     * @throws IOException If there's an IO error.
+     * @throws SQLException If there's a database error.
+     */
+    private void handleReceivedMessage(Message message) throws IOException, SQLException {
+        if (message instanceof BalanceRequestMessage) {
+            handleBalanceRequest();
+        } else if (message instanceof DepositRequestMessage) {
+            handleDepositRequest((DepositRequestMessage) message);
+        } else if (message instanceof WithdrawalRequestMessage) {
+            handleWithdrawalRequest((WithdrawalRequestMessage) message);
+        } else if (message instanceof TransferRequestMessage) {
+            handleTransferRequest((TransferRequestMessage) message);
+        } else if (message instanceof ExitMessage) {
+            handleExitRequest();
+        } else {
+            log.warn("Received unrecognized message type: {}", message.getType());
+        }
+    }
+
+    private void handleBalanceRequest() {
+        BigDecimal currentBalance = accountService.getCurrentBalance(accountId);
+        sendMessage(new BalanceResponseMessage(currentBalance));
+    }
+
+    private void handleDepositRequest(DepositRequestMessage drm) throws IOException, SQLException {
+        transactionService.deposit(accountId, drm.getAmount());
+        sendMessage(new DepositResponseMessage(drm.getAmount()));
+    }
+
+    private void handleWithdrawalRequest(WithdrawalRequestMessage wrm) throws IOException, SQLException {
+        transactionService.withdraw(accountId, wrm.getAmount());
+        sendMessage(new WithdrawalResponseMessage(wrm.getAmount()));
+    }
+
+    private void handleTransferRequest(TransferRequestMessage trm) throws IOException, SQLException {
+        transactionService.transfer(accountId, trm.getAccount(), trm.getBigDecimal());
+        sendMessage(new TransferResponseMessage(trm.getAccount(), trm.getBigDecimal()));
+    }
+
+    private void handleExitRequest() {
+        bankServer.removeClient(this);
+        closeResources();
+    }
+
+    /**
+     * Sends a message to the client.
+     *
+     * @param message The message to be sent.
+     */
     public void sendMessage(Message message) {
         try {
-            System.out.println("SERVER: " + message.getType());
+            log.info("SERVER: {}", message.getType());
             out.writeObject(message);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error sending message for user {}", username, e);
         }
     }
 
+    /**
+     * Closes all the resources associated with this client, including streams and the socket connection.
+     */
     private void closeResources() {
         try {
             out.close();
             in.close();
             clientSocket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error closing resources for user {}", username, e);
         }
     }
 }
