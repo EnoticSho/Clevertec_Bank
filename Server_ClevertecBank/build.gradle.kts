@@ -10,6 +10,10 @@ repositories {
 }
 
 dependencies {
+    testImplementation(platform("org.junit:junit-bom:5.9.1"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.mockito:mockito-core:3.12.4")
+    implementation("com.itextpdf:itext7-core:7.2.4")
     annotationProcessor("org.projectlombok:lombok:1.18.26")
     implementation("org.projectlombok:lombok:1.18.26")
     implementation("org.postgresql:postgresql:42.6.0")

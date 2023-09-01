@@ -2,7 +2,10 @@ package server.entity;
 
 import lombok.*;
 
-@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Setter
+@Getter
 public class Client {
     private int clientId;
     private String firstName;

@@ -6,15 +6,34 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
+/**
+ * Data Access Object (DAO) for managing bank-related data in the database.
+ * Provides methods to create, retrieve, update, and delete banks.
+ * <p>
+ * Utilizes the {@link DatabaseConnectionManager} to manage and perform database operations.
+ * </p>
+ */
 public class BankDAO {
 
     private final DatabaseConnectionManager connectionManager;
 
+    /**
+     * Constructs a new BankDAO instance with the specified database connection manager.
+     *
+     * @param connectionManager The manager handling database connections.
+     */
     public BankDAO(DatabaseConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
     }
 
+    /**
+     * Inserts a new bank record into the database.
+     *
+     * @param bank The {@link Bank} entity to be inserted.
+     * @throws SQLException If any SQL-related error occurs.
+     */
     public void createBank(Bank bank) throws SQLException {
         String SQL = """
              INSERT INTO bank(name)
@@ -28,11 +47,18 @@ public class BankDAO {
         }
     }
 
-    public Bank getBank(int id) throws SQLException {
+    /**
+     * Retrieves a bank record by its ID.
+     *
+     * @param id The ID of the bank to be fetched.
+     * @return An {@link Optional} containing the bank entity if found, or empty if not found.
+     * @throws SQLException If any SQL-related error occurs.
+     */
+    public Optional<Bank> getBank(int id) throws SQLException {
         String SQL = """
-                SELECT *
-                FROM bank
-                WHERE bank_id = ?""";
+            SELECT *
+            FROM bank
+            WHERE bank_id = ?""";
 
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SQL)) {
@@ -42,14 +68,20 @@ public class BankDAO {
 
             if (rs.next()) {
                 Bank bank = new Bank();
-                bank.setBankId(rs.getInt("bankId"));
+                bank.setBankId(rs.getInt("bank_id")); // Assuming column name is "bank_id"
                 bank.setName(rs.getString("name"));
-                return bank;
+                return Optional.of(bank);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
+    /**
+     * Updates the details of a bank in the database.
+     *
+     * @param bank The {@link Bank} entity with updated details.
+     * @throws SQLException If any SQL-related error occurs.
+     */
     public void updateBank(Bank bank) throws SQLException {
         String SQL = """
              UPDATE bank
@@ -65,6 +97,12 @@ public class BankDAO {
         }
     }
 
+    /**
+     * Deletes a bank record from the database by its ID.
+     *
+     * @param id The ID of the bank to be deleted.
+     * @throws SQLException If any SQL-related error occurs.
+     */
     public void deleteBank(int id) throws SQLException {
         String SQL = """
                 DELETE FROM bank

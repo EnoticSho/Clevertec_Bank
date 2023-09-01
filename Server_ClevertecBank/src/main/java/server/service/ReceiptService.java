@@ -2,7 +2,7 @@ package server.service;
 
 import lombok.extern.slf4j.Slf4j;
 import server.entity.CurrencyType;
-import server.entity.Receipt;
+import server.dto.Receipt;
 import server.entity.TransactionType;
 
 import java.io.BufferedWriter;
@@ -20,7 +20,7 @@ import java.sql.Timestamp;
 @Slf4j
 public class ReceiptService {
 
-    private static final String RECEIPT_DIR = "check";
+    private final String RECEIPT_DIR = "check";
 
     /**
      * Constructor that ensures the receipt directory exists upon instantiation.

@@ -3,6 +3,7 @@ package server.dao;
 import lombok.extern.slf4j.Slf4j;
 import server.dto.AccountDTO;
 import server.dbConnection.DatabaseConnectionManager;
+import server.entity.CurrencyType;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -11,7 +12,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Account Data Access Object for handling database operations related to accounts.
+ * Data Access Object (DAO) for interacting with account-related data in the database.
+ * Provides methods to retrieve, update, and manipulate account data.
+ * <p>
+ * This DAO utilizes the {@link DatabaseConnectionManager} to manage database connections and operations.
+ * </p>
  */
 @Slf4j
 public class AccountDAO {
@@ -28,17 +33,17 @@ public class AccountDAO {
     }
 
     /**
-     * Retrieve AccountDTO by account ID.
+     * Retrieves the account details by account ID.
      *
-     * @param accountId The account ID.
-     * @return The AccountDTO object or null if not found.
+     * @param accountId The unique ID of the account to be retrieved.
+     * @return An {@link AccountDTO} instance with the account details or null if not found.
      */
     public AccountDTO getAccountDTOById(int accountId) {
-        // SQL Query for fetching account details
         String query = """
-                SELECT a.account_number, b.name
+                SELECT a.account_number, a.balance, a.currency, b.name, c.first_name
                 FROM Account a
                 JOIN bank b ON a.bank_id = b.bank_id
+                JOIN client c ON a.client_id = c.client_id
                 WHERE a.account_id = ?""";
 
         try (Connection connection = connectionManager.getConnection();
@@ -52,6 +57,9 @@ public class AccountDAO {
                     accountDTO.setAccountId(accountId);
                     accountDTO.setAccountNumber(resultSet.getString("account_number"));
                     accountDTO.setBankName(resultSet.getString("name"));
+                    accountDTO.setClientName(resultSet.getString("first_name"));
+                    accountDTO.setAmount(resultSet.getBigDecimal("balance"));
+                    accountDTO.setCurrencyType(CurrencyType.valueOf(resultSet.getString("currency")));
                     return accountDTO;
                 }
             }
@@ -63,11 +71,11 @@ public class AccountDAO {
     }
 
     /**
-     * Retrieves an account ID based on client login credentials.
+     * Fetches the account ID associated with the provided client login credentials.
      *
-     * @param login    Client login username.
-     * @param password Client password.
-     * @return The account ID or null if not found.
+     * @param login    The client's login username.
+     * @param password The client's password.
+     * @return The account ID associated with the client or null if not found.
      */
     public Integer getAccountIdByClientLogin(String login, String password) {
         String checkAccountSQL = """
@@ -97,11 +105,11 @@ public class AccountDAO {
     }
 
     /**
-     * Deposits an amount to the account with the specified account ID.
+     * Adds a deposit to a specified account.
      *
-     * @param accountId Account ID.
-     * @param amount    Amount to be deposited.
-     * @return true if the deposit was successful, false otherwise.
+     * @param accountId The unique ID of the account.
+     * @param amount    The amount to deposit.
+     * @return true if the deposit is successful, false otherwise.
      */
     public boolean deposit(int accountId, BigDecimal amount) {
         String depositSQL = """
@@ -125,11 +133,11 @@ public class AccountDAO {
     }
 
     /**
-     * Withdraws an amount from the account with the specified account ID.
+     * Deducts a withdrawal amount from a specified account.
      *
-     * @param accountId Account ID.
-     * @param amount    Amount to be withdrawn.
-     * @return true if the withdrawal was successful, false otherwise.
+     * @param accountId The unique ID of the account.
+     * @param amount    The amount to withdraw.
+     * @return true if the withdrawal is successful, false otherwise.
      */
     public boolean withdraw(int accountId, BigDecimal amount) {
         String withdrawSQL = """
@@ -153,10 +161,10 @@ public class AccountDAO {
     }
 
     /**
-     * Gets the current balance of the specified account.
+     * Fetches the current balance of a specified account.
      *
-     * @param accountId Account ID.
-     * @return Current balance or null if not found.
+     * @param accountId The unique ID of the account.
+     * @return The current balance of the account or null if not found.
      */
     public BigDecimal getCurrentBalance(int accountId) {
         String getBalanceSQL = """
@@ -182,10 +190,10 @@ public class AccountDAO {
     }
 
     /**
-     * Retrieves an account ID by account number.
+     * Gets the account ID associated with a provided account number.
      *
-     * @param number Account number.
-     * @return Account ID or null if not found.
+     * @param number The account number to search for.
+     * @return The account ID associated with the account number or null if not found.
      */
     public Integer getAccountIdByNumber(String number) {
         String getAccountIdSQL = """
@@ -211,10 +219,10 @@ public class AccountDAO {
     }
 
     /**
-     * Adds a percentage to all account balances.
+     * Increases the balance of all accounts by a specified percentage.
      *
-     * @param per Percentage to add.
-     * @return true if the operation was successful, false otherwise.
+     * @param per The percentage by which to increase the balances.
+     * @return true if the operation is successful, false otherwise.
      */
     public boolean addPercentByAccount(Double per) {
         String update = """

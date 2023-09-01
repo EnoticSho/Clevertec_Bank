@@ -120,6 +120,7 @@ public class BankServer {
     public void shutdown() {
         shutdownExecutor(executorService);
         shutdownExecutor(scheduler);
+        connectionManager.close();
     }
 
     /**

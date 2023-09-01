@@ -4,16 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import model.ExitMessage;
 import model.Message;
 import model.auth.AuthRequestMessage;
-import model.operations.BalanceRequestMessage;
-import model.operations.DepositRequestMessage;
-import model.operations.TransferRequestMessage;
-import model.operations.WithdrawalRequestMessage;
+import model.operations.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.net.Socket;
+import java.time.LocalDate;
 
 /**
  * Represents a client-side service for interacting with the bank server.
@@ -105,6 +103,21 @@ public class BankService {
      */
     public Message transfer(String accountNumber, BigDecimal transferAmount) throws IOException, ClassNotFoundException {
         network.sendMessage(new TransferRequestMessage(accountNumber, transferAmount));
+        return network.receiveMessage();
+    }
+
+
+    /**
+     * Sends a request to the bank server for a financial statement within a specified date range.
+     *
+     * @param start The start date of the desired statement period.
+     * @param endDate The end date of the desired statement period.
+     * @return The response message from the server containing the statement.
+     * @throws IOException If there's a network issue during the request.
+     * @throws ClassNotFoundException If there's an issue deserializing the server's response.
+     */
+    public Message statement(LocalDate start, LocalDate endDate) throws IOException, ClassNotFoundException {
+        network.sendMessage(new StatementRequestMessage(start, endDate));
         return network.receiveMessage();
     }
 

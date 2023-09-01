@@ -1,0 +1,10 @@
++----------------------------------------------------+
+| Bank Check                                         |
+| Date:                      2023-09-01 14:13:46.344 |
+| Transaction:                              Transfer |
+| Sender Bank:                        Clevertec-Bank |
+| Receiver Bank:                     Clevertec-Bank1 |
+| Sender Account:                         1234567890 |
+| Receiver Account:                       1122334455 |
+| Amount:                                    1000,00 |
++----------------------------------------------------+

@@ -23,7 +23,6 @@ import java.sql.SQLException;
 /**
  * Handles individual client connections, facilitating authentication,
  * reading messages, and performing transactions on behalf of the client.
- *
  */
 @Slf4j
 public class ClientHandler implements Runnable {
@@ -43,8 +42,8 @@ public class ClientHandler implements Runnable {
     /**
      * Creates a new client handler for a given socket connection and bank server instance.
      *
-     * @param clientSocket The socket representing the client connection.
-     * @param bankServer The main server instance.
+     * @param clientSocket      The socket representing the client connection.
+     * @param bankServer        The main server instance.
      * @param connectionManager The database connection manager.
      * @throws IOException If there's an error setting up the input/output streams.
      */
@@ -133,7 +132,7 @@ public class ClientHandler implements Runnable {
      * Handles received messages and takes appropriate actions based on the message type.
      *
      * @param message The received message from the client.
-     * @throws IOException If there's an IO error.
+     * @throws IOException  If there's an IO error.
      * @throws SQLException If there's a database error.
      */
     private void handleReceivedMessage(Message message) throws IOException, SQLException {
@@ -145,6 +144,8 @@ public class ClientHandler implements Runnable {
             handleWithdrawalRequest((WithdrawalRequestMessage) message);
         } else if (message instanceof TransferRequestMessage) {
             handleTransferRequest((TransferRequestMessage) message);
+        } else if (message instanceof StatementRequestMessage) {
+            handleStatementRequest((StatementRequestMessage) message);
         } else if (message instanceof ExitMessage) {
             handleExitRequest();
         } else {
@@ -170,6 +171,12 @@ public class ClientHandler implements Runnable {
     private void handleTransferRequest(TransferRequestMessage trm) throws IOException, SQLException {
         transactionService.transfer(accountId, trm.getAccount(), trm.getBigDecimal());
         sendMessage(new TransferResponseMessage(trm.getAccount(), trm.getBigDecimal()));
+    }
+
+
+    private void handleStatementRequest(StatementRequestMessage message) throws SQLException {
+        String accountStatement = transactionService.getAccountStatement(accountId, message.getStart(), message.getEnd());
+        sendMessage(new StatementResponseMessage(accountStatement));
     }
 
     private void handleExitRequest() {

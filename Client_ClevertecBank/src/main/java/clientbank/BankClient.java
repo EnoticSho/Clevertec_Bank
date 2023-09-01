@@ -4,13 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import model.ErrorMessage;
 import model.Message;
 import model.auth.AuthResponse;
-import model.operations.BalanceResponseMessage;
-import model.operations.DepositResponseMessage;
-import model.operations.TransferResponseMessage;
-import model.operations.WithdrawalResponseMessage;
+import model.operations.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Scanner;
 
 /**
@@ -60,6 +58,7 @@ public class BankClient {
                 2. deposit
                 3. withdrawal
                 4. transfer
+                5. statement
                 0. Exit
                 """);
     }
@@ -75,6 +74,7 @@ public class BankClient {
             case 2 -> deposit();
             case 3 -> withdrawal();
             case 4 -> transfer();
+            case 5 -> statement();
             case 0 -> exit();
             default -> System.out.println("Invalid choice. Please try again.");
         }
@@ -193,6 +193,30 @@ public class BankClient {
             }
         } catch (IOException | ClassNotFoundException e) {
             log.error("Error during transfer.", e);
+        }
+    }
+
+
+    /**
+     * Generates and displays a statement for the user's account based on a date range.
+     */
+    private void statement() {
+        System.out.print("Enter start date: ");
+        String startDate = scanner.nextLine();
+        System.out.print("Enter end date: ");
+        String endDate = scanner.nextLine();
+
+        try {
+            Message response = bankService.statement(LocalDate.parse(startDate), LocalDate.parse(endDate));
+            if (response instanceof StatementResponseMessage stm) {
+                System.out.println(stm.getMessage());
+            } else if (response instanceof ErrorMessage em) {
+                System.out.println(em.getErrorMessage());
+            } else {
+                handleUnexpectedResponse(response, "statement");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            log.error("Error during statement.", e);
         }
     }
 
