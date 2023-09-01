@@ -1,6 +1,7 @@
 package server.dao;
 
 import lombok.extern.slf4j.Slf4j;
+import org.mindrot.jbcrypt.BCrypt;
 import server.dto.AccountDTO;
 import server.dbConnection.DatabaseConnectionManager;
 import server.entity.CurrencyType;
@@ -83,18 +84,19 @@ public class AccountDAO {
                 FROM account
                 JOIN client ON account.client_id = client.client_id
                 WHERE client.username = ?
-                AND client.password = ?
                 AND account.bank_id = 1""";
 
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(checkAccountSQL)) {
 
             preparedStatement.setString(1, login);
-            preparedStatement.setString(2, password);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    return resultSet.getInt("account_id");
+                    String storedHashedPassword = resultSet.getString("password");
+                    if (BCrypt.checkpw(password, storedHashedPassword)) {
+                        return resultSet.getInt("account_id");
+                    }
                 }
             }
         } catch (SQLException e) {
