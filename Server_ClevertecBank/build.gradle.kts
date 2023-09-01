@@ -18,6 +18,7 @@ dependencies {
     implementation(project(mapOf("path" to ":message")))
     implementation("org.slf4j:slf4j-api:1.7.32")
     implementation("ch.qos.logback:logback-classic:1.2.9")
+    compileOnly("javax.servlet:javax.servlet-api:3.0.1")
 }
 
 tasks.test {
