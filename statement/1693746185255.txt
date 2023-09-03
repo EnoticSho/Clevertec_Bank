@@ -1,0 +1,12 @@
+Statement
+Clevertec_Bank
+Client                    | Alisa                    
+Account                   | 1234567890               
+Currency                  | BYN                      
+Period                    | 2023-09-03 - 2023-09-03  
+Date of formation         | 2023-09-03 16:03:05.255  
+Balance                   | 15000.00                 
+Date                 | Transaction Type     | Amount              
+-------------------------------------------------------------------
+2023-09-03           | Deposit              | 5000.00              
+2023-09-03           | Withdrawal           | 5000.00              

@@ -62,6 +62,10 @@ public class AccountService {
      * @param amount    The amount to be deposited.
      */
     public void deposit(int accountId, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+            log.error("Attempted to deposit a negative amount to accountId: {}", accountId);
+            throw new IllegalArgumentException("Amount to be deposited cannot be negative.");
+        }
         try {
             accountDAO.deposit(accountId, amount);
         } catch (Exception e) {
@@ -77,6 +81,24 @@ public class AccountService {
      * @param amount    The amount to be withdrawn.
      */
     public void withdraw(int accountId, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+            log.error("Attempted to withdraw a negative amount from accountId: {}", accountId);
+            throw new IllegalArgumentException("Amount to be withdrawn cannot be negative.");
+        }
+
+        BigDecimal currentBalance;
+        try {
+            currentBalance = accountDAO.getCurrentBalance(accountId);
+        } catch (Exception e) {
+            log.error("Error fetching balance for accountId: {}", accountId, e);
+            throw new RuntimeException("Error fetching balance during withdrawal", e);
+        }
+
+        if (amount.compareTo(currentBalance) > 0) {
+            log.error("Attempted to withdraw an amount greater than the current balance for accountId: {}", accountId);
+            throw new IllegalArgumentException("Amount to be withdrawn exceeds the current balance.");
+        }
+
         try {
             accountDAO.withdraw(accountId, amount);
         } catch (Exception e) {

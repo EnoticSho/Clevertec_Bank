@@ -1,9 +1,8 @@
 package server.dao;
 
 import lombok.extern.slf4j.Slf4j;
-import org.mindrot.jbcrypt.BCrypt;
-import server.dto.AccountDTO;
 import server.dbConnection.DatabaseConnectionManager;
+import server.dto.AccountDTO;
 import server.entity.CurrencyType;
 
 import java.math.BigDecimal;
@@ -84,25 +83,20 @@ public class AccountDAO {
                 FROM account
                 JOIN client ON account.client_id = client.client_id
                 WHERE client.username = ?
+                AND client.password = ?
                 AND account.bank_id = 1""";
-
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(checkAccountSQL)) {
-
             preparedStatement.setString(1, login);
-
+            preparedStatement.setString(2, password);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    String storedHashedPassword = resultSet.getString("password");
-                    if (BCrypt.checkpw(password, storedHashedPassword)) {
-                        return resultSet.getInt("account_id");
-                    }
+                    return resultSet.getInt("account_id");
                 }
             }
         } catch (SQLException e) {
             log.error("SQL exception encountered while fetching account ID by client login: ", e);
         }
-
         return null;
     }
 
@@ -229,7 +223,7 @@ public class AccountDAO {
     public boolean addPercentByAccount(Double per) {
         String update = """
                 UPDATE account
-                SET balance = balance / 100 * ( ? + 100 )""";
+                SET balance = balance * ( ? + 100 ) / 100""";
 
         try (Connection connection = connectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(update)) {
